@@ -49,6 +49,7 @@ export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [semester, setSemester] = useState("4th");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [results, setResults] = useState<any[] | null>(null);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [customSubjects, setCustomSubjects] = useState<Record<string, string>>(KNOWN_SUBJECTS_MAP["4th"]);
@@ -98,26 +99,42 @@ export default function Home() {
     setIsProcessing(true);
     setResults(null);
     
+    const CHUNK_SIZE = 15; 
+    const totalChunks = Math.ceil(files.length / CHUNK_SIZE);
+    setProgress({ current: 0, total: totalChunks });
+    
+    let allExtractedData: any[] = [];
+    
     try {
-      const formData = new FormData();
-      files.forEach(file => {
-        formData.append("files", file);
-      });
-      formData.append("knownSubjects", JSON.stringify(customSubjects));
-      
-      // Sending request to Next.js API route rewritten to FastAPI
-      const response = await axios.post('/api/extract', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      for (let i = 0; i < totalChunks; i++) {
+        setProgress({ current: i + 1, total: totalChunks });
+        
+        const chunk = files.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        const formData = new FormData();
+        
+        chunk.forEach(file => {
+          formData.append("files", file);
+        });
+        formData.append("knownSubjects", JSON.stringify(customSubjects));
+        
+        const response = await axios.post('/api/extract', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        if (response.data && response.data.data) {
+          allExtractedData = [...allExtractedData, ...response.data.data];
         }
-      });
+      }
       
-      setResults(response.data.data);
+      setResults(allExtractedData);
     } catch (error) {
       console.error("Error processing files:", error);
-      alert("An error occurred while processing the files. Please try again.");
+      alert(`An error occurred while processing Batch ${progress?.current || 1}. Please try again.`);
     } finally {
       setIsProcessing(false);
+      setProgress(null);
     }
   };
 
@@ -240,14 +257,28 @@ export default function Home() {
                     ))}
                   </div>
                   
-                  <div className="mt-6 pt-6 border-t border-slate-700/50 flex justify-end">
+                  <div className="mt-6 pt-6 border-t border-slate-700/50 flex flex-col items-end gap-3">
+                    {progress && (
+                      <div className="w-full flex items-center gap-3 text-sm text-emerald-400 font-medium bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-500/20">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Processing Batch {progress.current} of {progress.total}...</span>
+                        <div className="flex-1 ml-4 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-emerald-500"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(progress.current / progress.total) * 100}%` }}
+                            transition={{ ease: "linear" }}
+                          />
+                        </div>
+                      </div>
+                    )}
                     <button 
                       onClick={processFiles}
                       disabled={isProcessing}
                       className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-emerald-500/25 flex items-center gap-2"
                     >
                       {isProcessing ? (
-                        <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Extracting Data...</>
                       ) : (
                         <><RefreshCw className="w-5 h-5" /> Extract Data</>
                       )}

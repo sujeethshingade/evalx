@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, FileText, CheckCircle, AlertCircle, Download, FileSpreadsheet, Loader2, RefreshCw, Layers, HardDrive } from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle, Download, Loader2, RefreshCw, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as xlsx from "xlsx";
 import axios from "axios";
@@ -388,30 +388,6 @@ export default function Home() {
                   </AnimatePresence>
                 </div>
               </div>
-            </motion.div>
-            
-            {/* Google Drive Integration Placeholder */}
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}
-              className="glass-card rounded-2xl p-6 relative overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <HardDrive className="w-24 h-24" />
-              </div>
-              <h3 className="text-lg font-medium mb-2 flex items-center gap-2 relative z-10">
-                <FileSpreadsheet className="w-5 h-5 text-amber-400" /> Google Drive Import
-              </h3>
-              <p className="text-sm text-slate-400 mb-4 relative z-10 leading-relaxed">
-                Connect your Google Drive account to directly import folders containing student mark PDFs.
-              </p>
-              
-              <button 
-                disabled
-                className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 text-slate-400 rounded-lg text-sm cursor-not-allowed flex items-center justify-center gap-2 relative z-10"
-              >
-                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                Coming Soon (Needs Setup)
-              </button>
             </motion.div>
           </div>
         </div>

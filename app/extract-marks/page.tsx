@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useMemo } from "react";
-import { Upload, FileText, CheckCircle, AlertCircle, Download, Loader2, RefreshCw, Layers, ArrowRight, ArrowLeft } from "lucide-react";
+import { Upload, FileText, CheckCircle, Download, Copy, RefreshCw, Layers, ArrowRight, ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as xlsx from "xlsx";
 import axios from "axios";
@@ -13,53 +13,98 @@ import { AgGridReact } from "ag-grid-react";
 import { ModuleRegistry, AllCommunityModule, themeQuartz } from "ag-grid-community";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const KNOWN_SUBJECTS_MAP: Record<string, Record<string, string>> = {
-  "2nd": {},
-  "4th": {
-    "BCS401": "ANALYSIS & DESIGN OF ALGORITHMS",
-    "BIS402": "ADVANCED JAVA",
-    "BCS403": "DATABASE MANAGEMENT SYSTEMS",
-    "BCSL404": "ANALYSIS & DESIGN OF ALGORITHMS LAB",
-    "BBOC407": "BIOLOGY FOR COMPUTER ENGINEERS",
-    "BUHK408": "UNIVERSAL HUMAN VALUES COURSE",
-    "BNSK459": "NATIONAL SERVICE SCHEME",
-    "BCS456C": "UI/UX",
-    "BCS405D": "LINEAR ALGEBRA"
-  },
-  "5th": {
-    "BCS501": "SOFTWARE ENGINEERING AND PROJECT MANAGEMENT",
-    "BCS502": "COMPUTER NETWORKS",
-    "BCS503": "THEORY OF COMPUTATION",
-    "BAIL504": "DATA VISUALIZATION LAB",
-    "BIS586": "MINI PROJECT",
-    "BRMK557": "RESEARCH METHODOLOGY AND IPR",
-    "BCS508": "ENVIRONMENTAL STUDIES AND E-WASTE MANAGEMENT",
-    "BNSK559": "NATIONAL SERVICE SCHEME",
-    "BCS515B": "ARTIFICIAL INTELLIGENCE"
-  },
-  "6th": {},
-  "7th": {
-    "BIS701": "BIG DATA ANALYTICS",
-    "BCS702": "PARALLEL COMPUTING",
-    "BIS703": "INFORMATION & NETWORK SECURITY",
-    "BIS786": "MAJOR PROJECT PHASE-II",
-    "BME755A": "INTRODUCTION TO NON-TRADITIONAL MACHINING",
-    "BIS714B": "SOFTWARE QUALITY ASSURANCE",
-    "BAD714D": "SOCIAL NETWORK ANALYSIS",
-    "BCS714A": "DEEP LEARNING"
-  }
+type SubjectInfo = { code: string; name: string; credits: number; };
+
+const KNOWN_SUBJECTS_MAP: Record<string, SubjectInfo[]> = {
+  "1st": [
+    { code: "BMATS101", name: "Mathematics for CSE Stream-I", credits: 4 },
+    { code: "BCHES102", name: "Chemistry for CSE Stream", credits: 4 },
+    { code: "BCEDK103", name: "Computer-Aided Engineering Drawing", credits: 3 },
+    { code: "BESCK104B", name: "Introduction to Electrical Engineering", credits: 3 },
+    { code: "BETCK105I", name: "Introduction to Cyber Security", credits: 3 },
+    { code: "BSFHK158", name: "Scientific Foundations of Health", credits: 1 },
+    { code: "BPWSK106", name: "Professional Writing Skills in English", credits: 1 },
+    { code: "BKSKK107", name: "Samskrutika Kannada", credits: 1 }
+  ],
+  "2nd": [
+    { code: "BMATS201", name: "Mathematics-II for CSE Stream", credits: 4 },
+    { code: "BPHYS202", name: "Applied Physics for CSE stream", credits: 4 },
+    { code: "BPOPS203", name: "Principles of Programming Using C", credits: 3 },
+    { code: "BESCK204C", name: "Introduction to Electronics Communication", credits: 3 },
+    { code: "BPLCK205B", name: "Introduction to Python Programming", credits: 3 },
+    { code: "BIDTK258", name: "Innovation and Design Thinking", credits: 1 },
+    { code: "BENGK206", name: "Communicative English", credits: 1 },
+    { code: "BICOK207", name: "Indian Constitution", credits: 1 }
+  ],
+  "3rd": [
+    { code: "BCS301", name: "Mathematics for Computer Science", credits: 4 },
+    { code: "BCS302", name: "Digital Design & Computer Organization", credits: 4 },
+    { code: "BCS303", name: "Operating Systems", credits: 4 },
+    { code: "BCS304", name: "Data Structures and Applications", credits: 3 },
+    { code: "BCSL305", name: "Data Structures Lab", credits: 1 },
+    { code: "BCS358D", name: "Data Visualization with Python", credits: 1 },
+    { code: "BPEK359", name: "Physical Education", credits: 0 },
+    { code: "BCS306A", name: "Object Oriented Programming with Java", credits: 3 },
+    { code: "BSCK307", name: "Social Connect and Responsibility", credits: 1 }
+  ],
+  "4th": [
+    { code: "BCS401", name: "ANALYSIS & DESIGN OF ALGORITHMS", credits: 3 },
+    { code: "BIS402", name: "ADVANCED JAVA", credits: 4 },
+    { code: "BCS403", name: "DATABASE MANAGEMENT SYSTEMS", credits: 4 },
+    { code: "BCSL404", name: "ANALYSIS & DESIGN OF ALGORITHMS LAB", credits: 1 },
+    { code: "BCS405D", name: "LINEAR ALGEBRA", credits: 3 },
+    { code: "BCS456C", name: "UI/UX", credits: 1 },
+    { code: "BPEK459", name: "PHYSICAL EDUCATION", credits: 0 },
+    { code: "BBOC407", name: "BIOLOGY FOR COMPUTER ENGINEERS", credits: 2 },
+    { code: "BUHK408", name: "UNIVERSAL HUMAN VALUES COURSE", credits: 1 }
+  ],
+  "5th": [
+    { code: "BCS501", name: "SOFTWARE ENGINEERING AND PROJECT MANAGEMENT", credits: 3 },
+    { code: "BCS515C", name: "UNIX SYSTEM PROGRAMMING", credits: 3 },
+    { code: "BCS502", name: "COMPUTER NETWORKS", credits: 4 },
+    { code: "BCS503", name: "THEORY OF COMPUTATION", credits: 4 },
+    { code: "BAIL504", name: "DATA VISUALIZATION LAB", credits: 1 },
+    { code: "BRMK557", name: "RESEARCH METHODOLOGY AND IPR", credits: 3 },
+    { code: "BPEK559", name: "PHYSICAL EDUCATION", credits: 0 },
+    { code: "BCS508", name: "ENVIRONMENTAL STUDIES AND E-WASTE MANAGEMENT", credits: 2 },
+    { code: "BIS586", name: "MINI PROJECT", credits: 2 }
+  ],
+  "6th": [
+    { code: "BIS601", name: "FULL STACK DEVELOPMENT", credits: 4 },
+    { code: "BIS613D", name: "CLOUD COMPUTING AND SECURITY", credits: 3 },
+    { code: "BCS602", name: "MACHINE LEARNING", credits: 4 },
+    { code: "BME654B", name: "RENEWABLE ENERGY POWER PLANTS", credits: 3 },
+    { code: "BCSL657D", name: "DEVOPS", credits: 1 },
+    { code: "BPEK658", name: "PHYSICAL EDUCATION", credits: 0 },
+    { code: "BCSL606", name: "MACHINE LEARNING LAB", credits: 1 },
+    { code: "BIS685", name: "PROJECT PHASE I", credits: 2 },
+    { code: "BIKS609", name: "INDIAN KNOWLEDGE SYSTEM", credits: 0 }
+  ],
+  "7th": [
+    { code: "BIS701", name: "BIG DATA ANALYTICS", credits: 3 },
+    { code: "BCS702", name: "PARALLEL COMPUTING", credits: 3 },
+    { code: "BIS703", name: "INFORMATION & NETWORK SECURITY", credits: 3 },
+    { code: "BIS786", name: "MAJOR PROJECT PHASE-II", credits: 4 },
+    { code: "BME755A", name: "INTRODUCTION TO NON-TRADITIONAL MACHINING", credits: 3 },
+    { code: "BIS714B", name: "SOFTWARE QUALITY ASSURANCE", credits: 3 },
+    { code: "BAD714D", name: "SOCIAL NETWORK ANALYSIS", credits: 3 },
+    { code: "BCS714A", name: "DEEP LEARNING", credits: 3 }
+  ],
+  "8th": [
+    { code: "BIS801", name: "PEC", credits: 3 },
+    { code: "BIS802", name: "OEC", credits: 3 },
+    { code: "BIS803", name: "Internship", credits: 10 }
+  ]
 };
 
 export default function ExtractMarks() {
-  const [step, setStep] = useState(1); // 1: Upload, 2: Config, 3: Processing, 4: Results
-  
+  const [step, setStep] = useState(1);
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [semester, setSemester] = useState("4th");
+  const [semester, setSemester] = useState("");
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [results, setResults] = useState<any[] | null>(null);
-  const [showSubjectModal, setShowSubjectModal] = useState(false);
-  const [customSubjects, setCustomSubjects] = useState<Record<string, string>>(KNOWN_SUBJECTS_MAP["4th"]);
+  const [customSubjects, setCustomSubjects] = useState<SubjectInfo[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,7 +131,7 @@ export default function ExtractMarks() {
   const handleSemesterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const sem = e.target.value;
     setSemester(sem);
-    setCustomSubjects({ ...KNOWN_SUBJECTS_MAP[sem] });
+    setCustomSubjects([...(KNOWN_SUBJECTS_MAP[sem] || [])]);
   };
 
   // Processing
@@ -109,7 +154,13 @@ export default function ExtractMarks() {
         const formData = new FormData();
         
         chunk.forEach(file => formData.append("files", file));
-        formData.append("knownSubjects", JSON.stringify(customSubjects));
+        
+        // Convert array to dictionary format expected by backend
+        const subjectsDict = customSubjects.reduce((acc, curr) => {
+          if (curr.code) acc[curr.code] = { name: curr.name, credits: curr.credits };
+          return acc;
+        }, {} as Record<string, {name: string, credits: number}>);
+        formData.append("knownSubjects", JSON.stringify(subjectsDict));
         
         const response = await axios.post('/api/extract', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -137,8 +188,8 @@ export default function ExtractMarks() {
       field: key,
       flex: 1,
       minWidth: 150,
-      filter: true,
-      sortable: true,
+      filter: false,
+      sortable: false,
       resizable: true,
     }));
   }, [results]);
@@ -163,7 +214,7 @@ export default function ExtractMarks() {
 
       <main className="flex-grow p-4 md:p-8 relative overflow-hidden flex flex-col items-center">
         {/* Step Indicator */}
-        <div className="w-full max-w-4xl mb-8 mt-4">
+        <div className="w-full max-w-xl mb-12 mt-4">
           <div className="flex items-center justify-between relative">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-800 -z-10 rounded-full" />
             <div 
@@ -191,7 +242,7 @@ export default function ExtractMarks() {
           </div>
         </div>
 
-        <div className="w-full max-w-5xl relative z-10 w-full">
+        <div className="w-full max-w-6xl relative z-10 w-full">
           <AnimatePresence mode="wait">
             {/* STEP 1: UPLOAD */}
             {step === 1 && (
@@ -201,7 +252,7 @@ export default function ExtractMarks() {
                 className="space-y-6"
               >
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">Upload Result PDFs</h2>
+                  <h2 className="text-3xl font-bold text-white/90 mb-2">Upload Result PDFs</h2>
                   <p className="text-slate-400">Select or drop your PDF files here to begin extraction.</p>
                 </div>
 
@@ -210,8 +261,8 @@ export default function ExtractMarks() {
                   onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
                 >
                   <div className="flex flex-col items-center justify-center text-center">
-                    <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-inner border border-slate-700">
-                      <Upload className="w-10 h-10 text-blue-400" />
+                    <div className="w-20 h-20 flex items-center justify-center mb-6 shadow-inner">
+                      <Upload className="w-10 h-10 text-white/90" />
                     </div>
                     <input type="file" multiple accept=".pdf" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
                     <button 
@@ -234,7 +285,7 @@ export default function ExtractMarks() {
                       <button onClick={() => setFiles([])} className="text-sm text-red-400 hover:text-red-300">Clear all</button>
                     </div>
                     
-                    <div className="max-h-[250px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                    <div className="max-h-[230px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                       {files.map((file, idx) => (
                         <div key={`${file.name}-${idx}`} className="flex items-center justify-between bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
                           <div className="flex items-center gap-3 truncate">
@@ -248,7 +299,7 @@ export default function ExtractMarks() {
                   </div>
                 )}
 
-                <div className="flex justify-end pt-4">
+                <div className="flex justify-end pt-8 pb-4">
                   <button 
                     onClick={() => setStep(2)}
                     disabled={files.length === 0}
@@ -265,7 +316,7 @@ export default function ExtractMarks() {
               <motion.div
                 key="step2"
                 initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}
-                className="space-y-6 max-w-3xl mx-auto"
+                className="space-y-6 max-w-6xl mx-auto"
               >
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-white mb-2">Configure Extraction</h2>
@@ -285,56 +336,99 @@ export default function ExtractMarks() {
                         onChange={handleSemesterChange}
                         className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-shadow appearance-none"
                       >
+                        <option value="" disabled>Select a Semester</option>
+                        <option value="1st">1st Semester</option>
                         <option value="2nd">2nd Semester</option>
+                        <option value="3rd">3rd Semester</option>
                         <option value="4th">4th Semester</option>
                         <option value="5th">5th Semester</option>
                         <option value="6th">6th Semester</option>
                         <option value="7th">7th Semester</option>
+                        <option value="8th">8th Semester</option>
                       </select>
                     </div>
                     
-                    <div className="pt-4 border-t border-slate-800">
+                    <div>
                       <div className="flex items-center justify-between mb-4">
                         <label className="text-sm font-medium text-slate-400">Subject Mapping</label>
                         <span className="text-xs font-semibold bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-500/30">
-                          {Object.keys(customSubjects).length} subjects predefined
+                          {customSubjects.length} subjects
                         </span>
                       </div>
                       
-                      <button 
-                        onClick={() => setShowSubjectModal(!showSubjectModal)}
-                        className="w-full text-left px-5 py-3.5 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700 rounded-xl transition-colors text-sm flex items-center justify-between"
-                      >
-                        <span className="font-medium">Verify Subjects & Codes</span> 
-                        <AlertCircle className="w-5 h-5 text-indigo-400" />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {showSubjectModal && (
-                          <motion.div 
-                            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                            className="mt-3 bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden shadow-inner"
-                          >
-                            <div className="max-h-[350px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                              {Object.entries(customSubjects).length === 0 ? (
-                                <p className="text-sm text-slate-500 text-center py-6">No predefined subjects for this semester. The extractor will use regex to guess column headers.</p>
-                              ) : (
-                                Object.entries(customSubjects).map(([code, name]) => (
-                                  <div key={code} className="space-y-1.5 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                                    <label className="text-xs font-mono font-bold text-indigo-400">{code}</label>
-                                    <input 
-                                      type="text"
-                                      value={name}
-                                      onChange={(e) => setCustomSubjects(prev => ({...prev, [code]: e.target.value}))}
-                                      className="w-full bg-slate-800 border border-slate-700 rounded-md md:text-sm px-3 py-2 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                                    />
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      <div className="bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
+                        <div className="max-h-[430px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                          {semester === "" ? (
+                            <p className="text-sm text-slate-500 text-center py-6">Please select a semester above to view and configure its subjects.</p>
+                          ) : customSubjects.length === 0 ? (
+                            <p className="text-sm text-slate-500 text-center py-6">No predefined subjects for this semester. The extractor will use regex to guess column headers.</p>
+                          ) : (
+                            customSubjects.map((info, idx) => (
+                              <div key={`idx-${idx}`} className="flex gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 items-end">
+                                <div className="space-y-1.5 w-1/4 min-w-[100px]">
+                                  <label className="text-xs font-mono font-bold text-indigo-400">Code</label>
+                                  <input 
+                                    type="text"
+                                    value={info.code}
+                                    onChange={(e) => {
+                                      const newSubjects = [...customSubjects];
+                                      newSubjects[idx].code = e.target.value.toUpperCase();
+                                      setCustomSubjects(newSubjects);
+                                    }}
+                                    className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors uppercase"
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1.5 min-w-[150px]">
+                                  <label className="text-xs font-mono font-bold text-indigo-400">Subject Name</label>
+                                  <input 
+                                    type="text"
+                                    value={info.name}
+                                    onChange={(e) => {
+                                      const newSubjects = [...customSubjects];
+                                      newSubjects[idx].name = e.target.value;
+                                      setCustomSubjects(newSubjects);
+                                    }}
+                                    className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="space-y-1.5 w-24 min-w-[80px]">
+                                  <label className="text-xs font-mono font-bold text-indigo-400">Credits</label>
+                                  <input 
+                                    type="number"
+                                    value={info.credits}
+                                    min={0} max={10}
+                                    onChange={(e) => {
+                                      const newSubjects = [...customSubjects];
+                                      newSubjects[idx].credits = parseInt(e.target.value) || 0;
+                                      setCustomSubjects(newSubjects);
+                                    }}
+                                    className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const newSubjects = customSubjects.filter((_, i) => i !== idx);
+                                    setCustomSubjects(newSubjects);
+                                  }}
+                                  className="p-2.5 mb-[1px] rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 transition-colors shrink-0"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </div>
+                            ))
+                          )}
+                          
+                          {semester !== "" && (
+                            <button
+                              onClick={() => setCustomSubjects([...customSubjects, { code: "", name: "", credits: 0 }])}
+                              className="w-full py-3 border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-lg text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-800/50 transition-all text-sm font-medium group mt-4!"
+                            >
+                              <Plus className="w-4 h-4 group-hover:text-indigo-400 transition-colors" />
+                              <span className="group-hover:text-white transition-colors">Add Subject</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -348,7 +442,8 @@ export default function ExtractMarks() {
                   </button>
                   <button 
                     onClick={processFiles}
-                    className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20"
+                    disabled={semester === ""}
+                    className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20 disabled:shadow-none"
                   >
                     <RefreshCw className="w-5 h-5" /> Start Processing
                   </button>
@@ -363,7 +458,7 @@ export default function ExtractMarks() {
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 className="flex flex-col items-center justify-center py-20"
               >
-                <div className="w-24 h-24 relative mb-8">
+                <div className="w-24 h-24 relative mb-12">
                   <div className="absolute inset-0 border-4 border-slate-800 rounded-full" />
                   <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin" />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -373,7 +468,7 @@ export default function ExtractMarks() {
                 
                 <h2 className="text-3xl font-bold text-white mb-3">Extracting Data</h2>
                 <p className="text-slate-400 mb-8 max-w-sm text-center">
-                  Parsing {files.length} PDFs. This uses chunks to avoid payload limits...
+                  Parsing {files.length} PDFs.
                 </p>
 
                 {progress && (
@@ -413,10 +508,13 @@ export default function ExtractMarks() {
                     
                     <div className="flex gap-3">
                       <button 
-                        onClick={() => { setFiles([]); setStep(1); }}
-                        className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-all border border-slate-700"
+                         onClick={() => {
+                          const url = window.location.href;
+                          navigator.clipboard.writeText(url);
+                        }}
+                        className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-all border border-slate-700 flex items-center gap-2"
                       >
-                        Extract More
+                        <Copy className="w-5 h-5" /> Copy link
                       </button>
                       <button 
                         onClick={downloadExcel}
@@ -429,8 +527,7 @@ export default function ExtractMarks() {
 
                   {/* AG Grid Container */}
                   <div 
-                    className="w-full h-[600px] border border-slate-700/50 rounded-xl overflow-hidden shadow-inner"
-                    style={{ '--ag-background-color': '#0f172a', '--ag-header-background-color': '#1e293b', '--ag-odd-row-background-color': '#0f172a', '--ag-header-foreground-color': '#cbd5e1', '--ag-data-color': '#f8fafc', '--ag-row-hover-color': '#1e293b', '--ag-border-color': '#334155' } as any}
+                    className="w-full h-[600px] border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark"
                   >
                     <AgGridReact
                       theme={themeQuartz}
@@ -449,6 +546,7 @@ export default function ExtractMarks() {
           </AnimatePresence>
         </div>
       </main>
+      <Footer />
       
       {/* Scrollbar styling */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -457,14 +555,15 @@ export default function ExtractMarks() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
         
-        .ag-theme-quartz {
+        .ag-theme-quartz-dark {
           --ag-background-color: transparent !important;
           --ag-header-background-color: rgba(30, 41, 59, 1) !important;
-          --ag-foreground-color: #f1f5f9 !important;
-          --ag-header-foreground-color: #94a3b8 !important;
+          --ag-foreground-color: #ffffff !important;
+          --ag-header-foreground-color: #cbd5e1 !important;
           --ag-border-color: rgba(51, 65, 85, 0.5) !important;
           --ag-row-border-color: rgba(51, 65, 85, 0.5) !important;
           --ag-odd-row-background-color: rgba(15, 23, 42, 0.5) !important;
+          --ag-data-color: #ffffff !important;
           --ag-row-hover-color: rgba(51, 65, 85, 0.3) !important;
           max-width: 100%;
         }

@@ -32,6 +32,8 @@ subject_patterns = [
 def clean_subject_name(subject_name, subject_code, known_subjects):
     """Clean and validate subject name with enhanced cleaning"""
     if subject_code in known_subjects:
+        if isinstance(known_subjects[subject_code], dict) and 'name' in known_subjects[subject_code]:
+            return known_subjects[subject_code]['name']
         return known_subjects[subject_code]
 
     subject_name = subject_name.strip()
@@ -58,6 +60,8 @@ def clean_subject_name(subject_name, subject_code, known_subjects):
     if (len(subject_name) < 3 or
             any(word in subject_name.lower() for word in ['student', 'semester', 'marks', 'total', 'result', 'code', 'name'])):
         if subject_code in known_subjects:
+            if isinstance(known_subjects[subject_code], dict) and 'name' in known_subjects[subject_code]:
+                return known_subjects[subject_code]['name']
             return known_subjects[subject_code]
 
     return subject_name
@@ -80,9 +84,13 @@ def extract_subjects_from_text(text: str, pdf_filename: str, known_subjects: dic
                 total_marks = 0 if total == 'AB' else int(total)
                 
                 if not any(s['code'] == code for s in subjects_found):
+                    credits = 0
+                    if code in known_subjects and isinstance(known_subjects[code], dict) and 'credits' in known_subjects[code]:
+                        credits = known_subjects[code]['credits']
+                        
                     subjects_found.append({
                         'code': code, 'name': subject, 'internal': internal_marks,
-                        'external': external_marks, 'total': total_marks, 'result': result
+                        'external': external_marks, 'total': total_marks, 'result': result, 'credits': credits
                     })
             except ValueError:
                 pass
@@ -112,9 +120,13 @@ def extract_subjects_from_text(text: str, pdf_filename: str, known_subjects: dic
                                 internal_marks = 0 if internal == 'AB' else int(internal)
                                 external_marks = 0 if external == 'AB' else int(external)
                                 total_marks = 0 if total == 'AB' else int(total)
+                                
+                                expected_name_str = expected_name['name'] if isinstance(expected_name, dict) else expected_name
+                                credits_val = expected_name['credits'] if isinstance(expected_name, dict) and 'credits' in expected_name else 0
+                                
                                 subjects_found.append({
-                                    'code': code, 'name': expected_name, 'internal': internal_marks,
-                                    'external': external_marks, 'total': total_marks, 'result': result
+                                    'code': code, 'name': expected_name_str, 'internal': internal_marks,
+                                    'external': external_marks, 'total': total_marks, 'result': result, 'credits': credits_val
                                 })
                                 break
                             except ValueError: pass
@@ -134,9 +146,13 @@ def extract_subjects_from_text(text: str, pdf_filename: str, known_subjects: dic
                         internal_marks = 0 if internal == 'AB' else int(internal)
                         external_marks = 0 if external == 'AB' else int(external)
                         total_marks = 0 if total == 'AB' else int(total)
+                        
+                        expected_name_str = expected_name['name'] if isinstance(expected_name, dict) else expected_name
+                        credits_val = expected_name['credits'] if isinstance(expected_name, dict) and 'credits' in expected_name else 0
+
                         subjects_found.append({
-                            'code': code, 'name': expected_name, 'internal': internal_marks,
-                            'external': external_marks, 'total': total_marks, 'result': result
+                            'code': code, 'name': expected_name_str, 'internal': internal_marks,
+                            'external': external_marks, 'total': total_marks, 'result': result, 'credits': credits_val
                         })
                         break
                     except ValueError: pass
@@ -186,6 +202,9 @@ async def extract_marks(
             subject_name = subject_info['name']
             subject_prefix = f"{code}_{subject_name}"
             
+            if 'credits' in subject_info and subject_info['credits'] > 0:
+                student_record[f"{subject_prefix}_Credits"] = subject_info['credits']
+                
             student_record[f"{subject_prefix}_Internal"] = subject_info['internal']
             student_record[f"{subject_prefix}_External"] = subject_info['external']
             student_record[f"{subject_prefix}_Total"] = subject_info['total']

@@ -11,7 +11,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center">
-          <Link href="/dashboard" className="font-bold text-xl text-slate-100">EvalX</Link>
+          <Link href="/" className="font-bold text-2xl text-slate-100">EvalX</Link>
         </div>
         
         {/* Desktop Navigation */}

@@ -5,6 +5,8 @@ import { Upload, FileText, CheckCircle, AlertCircle, Download, Loader2, RefreshC
 import { motion, AnimatePresence } from "framer-motion";
 import * as xlsx from "xlsx";
 import axios from "axios";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 // Known subjects from the Python backend defaults
 const KNOWN_SUBJECTS_MAP: Record<string, Record<string, string>> = {
@@ -151,34 +153,35 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-8 lg:p-12 relative overflow-hidden">
-      {/* Background gradients managed in globals.css */}
-      
-      <div className="max-w-6xl mx-auto relative z-10">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+
+      {/* Main Content Area */}
+      <main className="flex-grow p-4 md:p-8 relative overflow-hidden">
+        {/* Background gradients managed in globals.css */}
         
-        {/* Header Section */}
-        <header className="mb-12 text-center pt-8">
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }} 
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-3 mb-4"
-          >
-            <div className="p-3 bg-blue-600/20 rounded-xl border border-blue-500/30">
-              <RefreshCw className="w-8 h-8 text-blue-400" />
-            </div>
-            <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-              EvalX
-            </h1>
-          </motion.div>
-          <motion.p 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            transition={{ delay: 0.1 }}
-            className="text-lg text-slate-400 max-w-2xl mx-auto"
-          >
-            Automated student marks extraction. Upload PDF result sheets, process dynamically, and download consolidated Excel reports.
-          </motion.p>
-        </header>
+        <div className="max-w-6xl mx-auto relative z-10">
+          
+          {/* Welcome Section */}
+          <div className="mb-10 text-center md:text-left pt-4">
+            <motion.h1 
+              initial={{ opacity: 0, y: -10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3"
+            >
+              Automated Marks <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Extractor</span>
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ delay: 0.1 }}
+              className="text-slate-400 max-w-2xl text-base md:text-lg"
+            >
+              Upload PDF result sheets, process dynamically in the cloud, and download consolidated Excel reports instantly.
+            </motion.p>
+          </div>
+        
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
@@ -421,8 +424,11 @@ export default function Home() {
               </div>
             </motion.div>
           </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
       
       {/* Scrollbar styling */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -431,6 +437,6 @@ export default function Home() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
       `}} />
-    </main>
+    </div>
   );
 }

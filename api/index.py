@@ -1,9 +1,9 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Optional
+from typing import List
 import json
-import fitz  # PyMuPDF
+import fitz
 import re
 
 app = FastAPI()

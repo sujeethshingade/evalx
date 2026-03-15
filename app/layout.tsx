@@ -5,8 +5,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "EvalX | Automated Marks Extractor",
+  title: "EvalX",
   description: "Extract marks from student PDFs and create consolidated Excel sheets dynamically.",
+  authors: [{ name: "Sujeeth Shingade" }, {url: "https://github.com/sujeethshingade"}]
 };
 
 export default function RootLayout({

@@ -1,7 +1,22 @@
 "use client";
 
 import React, { useState, useRef, useMemo } from "react";
-import { Upload, FileText, CheckCircle, Download, Copy, RefreshCw, Layers, ArrowRight, ArrowLeft, Plus, Trash2 } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  Download,
+  Copy,
+  RefreshCw,
+  Layers,
+  ArrowRight,
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Mail,
+  Loader2,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as xlsx from "xlsx";
 import axios from "axios";
@@ -10,64 +25,108 @@ import Footer from "../components/Footer";
 
 // AG Grid imports
 import { AgGridReact } from "ag-grid-react";
-import { ModuleRegistry, AllCommunityModule, themeQuartz } from "ag-grid-community";
+import {
+  ModuleRegistry,
+  AllCommunityModule,
+  themeQuartz,
+} from "ag-grid-community";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-type SubjectInfo = { code: string; name: string; credits: number; };
+type SubjectInfo = { code: string; name: string; credits: number };
 
 const KNOWN_SUBJECTS_MAP: Record<string, SubjectInfo[]> = {
   "1st": [
     { code: "BMATS101", name: "Mathematics for CSE Stream-I", credits: 4 },
     { code: "BCHES102", name: "Chemistry for CSE Stream", credits: 4 },
-    { code: "BCEDK103", name: "Computer-Aided Engineering Drawing", credits: 3 },
-    { code: "BESCK104B", name: "Introduction to Electrical Engineering", credits: 3 },
+    {
+      code: "BCEDK103",
+      name: "Computer-Aided Engineering Drawing",
+      credits: 3,
+    },
+    {
+      code: "BESCK104B",
+      name: "Introduction to Electrical Engineering",
+      credits: 3,
+    },
     { code: "BETCK105I", name: "Introduction to Cyber Security", credits: 3 },
     { code: "BSFHK158", name: "Scientific Foundations of Health", credits: 1 },
-    { code: "BPWSK106", name: "Professional Writing Skills in English", credits: 1 },
-    { code: "BKSKK107", name: "Samskrutika Kannada", credits: 1 }
+    {
+      code: "BPWSK106",
+      name: "Professional Writing Skills in English",
+      credits: 1,
+    },
+    { code: "BKSKK107", name: "Samskrutika Kannada", credits: 1 },
   ],
   "2nd": [
     { code: "BMATS201", name: "Mathematics-II for CSE Stream", credits: 4 },
     { code: "BPHYS202", name: "Applied Physics for CSE stream", credits: 4 },
     { code: "BPOPS203", name: "Principles of Programming Using C", credits: 3 },
-    { code: "BESCK204C", name: "Introduction to Electronics Communication", credits: 3 },
-    { code: "BPLCK205B", name: "Introduction to Python Programming", credits: 3 },
+    {
+      code: "BESCK204C",
+      name: "Introduction to Electronics Communication",
+      credits: 3,
+    },
+    {
+      code: "BPLCK205B",
+      name: "Introduction to Python Programming",
+      credits: 3,
+    },
     { code: "BIDTK258", name: "Innovation and Design Thinking", credits: 1 },
     { code: "BENGK206", name: "Communicative English", credits: 1 },
-    { code: "BICOK207", name: "Indian Constitution", credits: 1 }
+    { code: "BICOK207", name: "Indian Constitution", credits: 1 },
   ],
   "3rd": [
     { code: "BCS301", name: "Mathematics for Computer Science", credits: 4 },
-    { code: "BCS302", name: "Digital Design & Computer Organization", credits: 4 },
+    {
+      code: "BCS302",
+      name: "Digital Design & Computer Organization",
+      credits: 4,
+    },
     { code: "BCS303", name: "Operating Systems", credits: 4 },
     { code: "BCS304", name: "Data Structures and Applications", credits: 3 },
     { code: "BCSL305", name: "Data Structures Lab", credits: 1 },
     { code: "BCS358D", name: "Data Visualization with Python", credits: 1 },
     { code: "BPEK359", name: "Physical Education", credits: 0 },
-    { code: "BCS306A", name: "Object Oriented Programming with Java", credits: 3 },
-    { code: "BSCK307", name: "Social Connect and Responsibility", credits: 1 }
+    {
+      code: "BCS306A",
+      name: "Object Oriented Programming with Java",
+      credits: 3,
+    },
+    { code: "BSCK307", name: "Social Connect and Responsibility", credits: 1 },
   ],
   "4th": [
     { code: "BCS401", name: "ANALYSIS & DESIGN OF ALGORITHMS", credits: 3 },
     { code: "BIS402", name: "ADVANCED JAVA", credits: 4 },
     { code: "BCS403", name: "DATABASE MANAGEMENT SYSTEMS", credits: 4 },
-    { code: "BCSL404", name: "ANALYSIS & DESIGN OF ALGORITHMS LAB", credits: 1 },
+    {
+      code: "BCSL404",
+      name: "ANALYSIS & DESIGN OF ALGORITHMS LAB",
+      credits: 1,
+    },
     { code: "BCS405D", name: "LINEAR ALGEBRA", credits: 3 },
     { code: "BCS456C", name: "UI/UX", credits: 1 },
     { code: "BPEK459", name: "PHYSICAL EDUCATION", credits: 0 },
     { code: "BBOC407", name: "BIOLOGY FOR COMPUTER ENGINEERS", credits: 2 },
-    { code: "BUHK408", name: "UNIVERSAL HUMAN VALUES COURSE", credits: 1 }
+    { code: "BUHK408", name: "UNIVERSAL HUMAN VALUES COURSE", credits: 1 },
   ],
   "5th": [
-    { code: "BCS501", name: "SOFTWARE ENGINEERING AND PROJECT MANAGEMENT", credits: 3 },
+    {
+      code: "BCS501",
+      name: "SOFTWARE ENGINEERING AND PROJECT MANAGEMENT",
+      credits: 3,
+    },
     { code: "BCS515C", name: "UNIX SYSTEM PROGRAMMING", credits: 3 },
     { code: "BCS502", name: "COMPUTER NETWORKS", credits: 4 },
     { code: "BCS503", name: "THEORY OF COMPUTATION", credits: 4 },
     { code: "BAIL504", name: "DATA VISUALIZATION LAB", credits: 1 },
     { code: "BRMK557", name: "RESEARCH METHODOLOGY AND IPR", credits: 3 },
     { code: "BPEK559", name: "PHYSICAL EDUCATION", credits: 0 },
-    { code: "BCS508", name: "ENVIRONMENTAL STUDIES AND E-WASTE MANAGEMENT", credits: 2 },
-    { code: "BIS586", name: "MINI PROJECT", credits: 2 }
+    {
+      code: "BCS508",
+      name: "ENVIRONMENTAL STUDIES AND E-WASTE MANAGEMENT",
+      credits: 2,
+    },
+    { code: "BIS586", name: "MINI PROJECT", credits: 2 },
   ],
   "6th": [
     { code: "BIS601", name: "FULL STACK DEVELOPMENT", credits: 4 },
@@ -78,23 +137,27 @@ const KNOWN_SUBJECTS_MAP: Record<string, SubjectInfo[]> = {
     { code: "BPEK658", name: "PHYSICAL EDUCATION", credits: 0 },
     { code: "BCSL606", name: "MACHINE LEARNING LAB", credits: 1 },
     { code: "BIS685", name: "PROJECT PHASE I", credits: 2 },
-    { code: "BIKS609", name: "INDIAN KNOWLEDGE SYSTEM", credits: 0 }
+    { code: "BIKS609", name: "INDIAN KNOWLEDGE SYSTEM", credits: 0 },
   ],
   "7th": [
     { code: "BIS701", name: "BIG DATA ANALYTICS", credits: 3 },
     { code: "BCS702", name: "PARALLEL COMPUTING", credits: 3 },
     { code: "BIS703", name: "INFORMATION & NETWORK SECURITY", credits: 3 },
     { code: "BIS786", name: "MAJOR PROJECT PHASE-II", credits: 4 },
-    { code: "BME755A", name: "INTRODUCTION TO NON-TRADITIONAL MACHINING", credits: 3 },
+    {
+      code: "BME755A",
+      name: "INTRODUCTION TO NON-TRADITIONAL MACHINING",
+      credits: 3,
+    },
     { code: "BIS714B", name: "SOFTWARE QUALITY ASSURANCE", credits: 3 },
     { code: "BAD714D", name: "SOCIAL NETWORK ANALYSIS", credits: 3 },
-    { code: "BCS714A", name: "DEEP LEARNING", credits: 3 }
+    { code: "BCS714A", name: "DEEP LEARNING", credits: 3 },
   ],
   "8th": [
     { code: "BIS801", name: "PEC", credits: 3 },
     { code: "BIS802", name: "OEC", credits: 3 },
-    { code: "BIS803", name: "Internship", credits: 10 }
-  ]
+    { code: "BIS803", name: "Internship", credits: 10 },
+  ],
 };
 
 export default function ExtractMarks() {
@@ -102,30 +165,48 @@ export default function ExtractMarks() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [semester, setSemester] = useState("");
-  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [results, setResults] = useState<any[] | null>(null);
   const [customSubjects, setCustomSubjects] = useState<SubjectInfo[]>([]);
-  
+  const [isUploading, setIsUploading] = useState(false);
+  const [isEmailing, setIsEmailing] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Drag and Drop handlers
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf" || f.name.endsWith(".pdf"));
-      setFiles(prev => [...prev, ...droppedFiles]);
+      const droppedFiles = Array.from(e.dataTransfer.files).filter(
+        (f) => f.type === "application/pdf" || f.name.endsWith(".pdf"),
+      );
+      setFiles((prev) => [...prev, ...droppedFiles]);
     }
   };
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const selectedFiles = Array.from(e.target.files).filter(f => f.type === "application/pdf" || f.name.endsWith(".pdf"));
-      setFiles(prev => [...prev, ...selectedFiles]);
+      const selectedFiles = Array.from(e.target.files).filter(
+        (f) => f.type === "application/pdf" || f.name.endsWith(".pdf"),
+      );
+      setFiles((prev) => [...prev, ...selectedFiles]);
     }
   };
-  const removeFile = (index: number) => setFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (index: number) =>
+    setFiles((prev) => prev.filter((_, i) => i !== index));
 
   // Config handlers
   const handleSemesterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -139,33 +220,37 @@ export default function ExtractMarks() {
     if (files.length === 0) return;
     setStep(3); // Move to Processing step
     setResults(null);
-    
-    const CHUNK_SIZE = 15; 
+
+    const CHUNK_SIZE = 15;
     const totalChunks = Math.ceil(files.length / CHUNK_SIZE);
     setProgress({ current: 0, total: totalChunks });
-    
+
     let allExtractedData: any[] = [];
-    
+
     try {
       for (let i = 0; i < totalChunks; i++) {
         setProgress({ current: i + 1, total: totalChunks });
-        
+
         const chunk = files.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
         const formData = new FormData();
-        
-        chunk.forEach(file => formData.append("files", file));
-        
+
+        chunk.forEach((file) => formData.append("files", file));
+
         // Convert array to dictionary format expected by backend
-        const subjectsDict = customSubjects.reduce((acc, curr) => {
-          if (curr.code) acc[curr.code] = { name: curr.name, credits: curr.credits };
-          return acc;
-        }, {} as Record<string, {name: string, credits: number}>);
+        const subjectsDict = customSubjects.reduce(
+          (acc, curr) => {
+            if (curr.code)
+              acc[curr.code] = { name: curr.name, credits: curr.credits };
+            return acc;
+          },
+          {} as Record<string, { name: string; credits: number }>,
+        );
         formData.append("knownSubjects", JSON.stringify(subjectsDict));
-        
-        const response = await axios.post('/api/extract', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+
+        const response = await axios.post("/api/extract", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
-        
+
         if (response.data && response.data.data) {
           allExtractedData = [...allExtractedData, ...response.data.data];
         }
@@ -174,7 +259,18 @@ export default function ExtractMarks() {
       setStep(4); // Move to Results step
     } catch (error) {
       console.error("Error processing files:", error);
-      alert(`An error occurred while processing Batch ${progress?.current || 1}. Please try again.`);
+      let errorMessage = `An error occurred while processing Batch ${progress?.current || 1}.`;
+      if (axios.isAxiosError(error)) {
+        const serverMsg =
+          (error.response?.data?.message as string | undefined) ||
+          (error.response?.data?.backendResponse as string | undefined);
+        if (serverMsg) {
+          errorMessage += `\n${serverMsg}`;
+        } else if (error.message) {
+          errorMessage += `\n${error.message}`;
+        }
+      }
+      alert(`${errorMessage}\nPlease try again.`);
       setStep(2); // Fallback to Config step
     } finally {
       setProgress(null);
@@ -184,7 +280,7 @@ export default function ExtractMarks() {
   // AG Grid config
   const colDefs = useMemo(() => {
     if (!results || results.length === 0) return [];
-    return Object.keys(results[0]).map(key => ({
+    return Object.keys(results[0]).map((key) => ({
       field: key,
       flex: 1,
       minWidth: 150,
@@ -208,70 +304,137 @@ export default function ExtractMarks() {
     xlsx.writeFile(workbook, `EvalX_Results_Sem_${semester}.xlsx`);
   };
 
+  const handleCopyLink = async () => {
+    if (!results) return;
+    setIsUploading(true);
+    try {
+      const { data } = await axios.post("/api/blob/upload", {
+        results,
+        semester,
+      });
+      await navigator.clipboard.writeText(data.url);
+      alert("Public link copied to clipboard successfully:\n" + data.url);
+    } catch (err) {
+      alert("Failed to upload the file to Vercel Blob.");
+      console.error(err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleEmailResults = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!results || !emailRecipient) return;
+    setIsEmailing(true);
+    try {
+      await axios.post("/api/email/results", {
+        results,
+        semester,
+        emailRecipient,
+      });
+      alert("Results sent successfully to " + emailRecipient);
+      setShowEmailModal(false);
+      setEmailRecipient("");
+    } catch (err) {
+      alert("Failed to send email.");
+      console.error(err);
+    } finally {
+      setIsEmailing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-slate-200">
       <Header />
 
-      <main className="flex-grow p-4 md:p-8 relative overflow-hidden flex flex-col items-center">
+      <main className="grow p-4 md:p-8 relative overflow-hidden flex flex-col items-center">
         {/* Step Indicator */}
         <div className="w-full max-w-xl mb-12 mt-4">
           <div className="flex items-center justify-between relative">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-800 -z-10 rounded-full" />
-            <div 
+            <div
               className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-500 -z-10 rounded-full transition-all duration-500"
               style={{ width: `${((step - 1) / 3) * 100}%` }}
             />
-            
+
             {[
               { id: 1, label: "Upload" },
               { id: 2, label: "Configure" },
               { id: 3, label: "Process" },
-              { id: 4, label: "Results" }
+              { id: 4, label: "Results" },
             ].map((s) => (
-              <div key={s.id} className="flex flex-col items-center gap-2 bg-slate-950 px-2">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors duration-300 ${
-                  step > s.id ? "bg-blue-500 border-blue-500 text-white" :
-                  step === s.id ? "bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]" :
-                  "bg-slate-800 border-slate-700 text-slate-400"
-                }`}>
+              <div
+                key={s.id}
+                className="flex flex-col items-center gap-2 bg-slate-950 px-2"
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors duration-300 ${
+                    step > s.id
+                      ? "bg-blue-500 border-blue-500 text-white"
+                      : step === s.id
+                        ? "bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                        : "bg-slate-800 border-slate-700 text-slate-400"
+                  }`}
+                >
                   {step > s.id ? <CheckCircle className="w-6 h-6" /> : s.id}
                 </div>
-                <span className={`text-xs md:text-sm font-medium ${step >= s.id ? "text-blue-400" : "text-slate-500"}`}>{s.label}</span>
+                <span
+                  className={`text-xs md:text-sm font-medium ${step >= s.id ? "text-blue-400" : "text-slate-500"}`}
+                >
+                  {s.label}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="w-full max-w-6xl relative z-10 w-full">
+        <div className="max-w-6xl relative z-10 w-full">
           <AnimatePresence mode="wait">
             {/* STEP 1: UPLOAD */}
             {step === 1 && (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
                 className="space-y-6"
               >
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white/90 mb-2">Upload Result PDFs</h2>
-                  <p className="text-slate-400">Select or drop your PDF files here to begin extraction.</p>
+                  <h2 className="text-3xl font-bold text-white/90 mb-2">
+                    Upload Result PDFs
+                  </h2>
+                  <p className="text-slate-400">
+                    Select or drop your PDF files here to begin extraction.
+                  </p>
                 </div>
 
-                <div 
-                  className={`glass-card rounded-2xl p-10 transition-all duration-300 border-2 border-dashed ${isDragging ? 'border-blue-500 bg-blue-500/10 scale-[1.02]' : 'border-slate-700 hover:border-slate-500'}`}
-                  onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                <div
+                  className={`glass-card rounded-2xl p-10 transition-all duration-300 border-2 border-dashed ${isDragging ? "border-blue-500 bg-blue-500/10 scale-[1.02]" : "border-slate-700 hover:border-slate-500"}`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
                   <div className="flex flex-col items-center justify-center text-center">
                     <div className="w-20 h-20 flex items-center justify-center mb-6 shadow-inner">
                       <Upload className="w-10 h-10 text-white/90" />
                     </div>
-                    <input type="file" multiple accept=".pdf" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
-                    <button 
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                    />
+                    <button
                       onClick={() => fileInputRef.current?.click()}
                       className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-blue-500/25 active:scale-95"
                     >
                       Browse Files
                     </button>
-                    <p className="text-slate-500 mt-4 text-sm">Or drag and drop PDFs here</p>
+                    <p className="text-slate-500 mt-4 text-sm">
+                      Or drag and drop PDFs here
+                    </p>
                   </div>
                 </div>
 
@@ -279,20 +442,35 @@ export default function ExtractMarks() {
                   <div className="glass-card rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-medium flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-blue-400" /> 
+                        <FileText className="w-5 h-5 text-blue-400" />
                         Selected Files ({files.length})
                       </h3>
-                      <button onClick={() => setFiles([])} className="text-sm text-red-400 hover:text-red-300">Clear all</button>
+                      <button
+                        onClick={() => setFiles([])}
+                        className="text-sm text-red-400 hover:text-red-300"
+                      >
+                        Clear all
+                      </button>
                     </div>
-                    
+
                     <div className="max-h-[230px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                       {files.map((file, idx) => (
-                        <div key={`${file.name}-${idx}`} className="flex items-center justify-between bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                        <div
+                          key={`${file.name}-${idx}`}
+                          className="flex items-center justify-between bg-slate-800/50 p-3 rounded-lg border border-slate-700/50"
+                        >
                           <div className="flex items-center gap-3 truncate">
                             <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                            <span className="text-sm truncate opacity-90">{file.name}</span>
+                            <span className="text-sm truncate opacity-90">
+                              {file.name}
+                            </span>
                           </div>
-                          <button onClick={() => removeFile(idx)} className="text-slate-500 hover:text-red-400 ml-4 shrink-0 transition-colors">&times;</button>
+                          <button
+                            onClick={() => removeFile(idx)}
+                            className="text-slate-500 hover:text-red-400 ml-4 shrink-0 transition-colors"
+                          >
+                            &times;
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -300,7 +478,7 @@ export default function ExtractMarks() {
                 )}
 
                 <div className="flex justify-end pt-8 pb-4">
-                  <button 
+                  <button
                     onClick={() => setStep(2)}
                     disabled={files.length === 0}
                     className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
@@ -315,28 +493,40 @@ export default function ExtractMarks() {
             {step === 2 && (
               <motion.div
                 key="step2"
-                initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
                 className="space-y-6 max-w-6xl mx-auto"
               >
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">Configure Extraction</h2>
-                  <p className="text-slate-400">Select semester and verify subjects to map the data correctly.</p>
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    Configure Extraction
+                  </h2>
+                  <p className="text-slate-400">
+                    Select semester and verify subjects to map the data
+                    correctly.
+                  </p>
                 </div>
 
                 <div className="glass-card rounded-2xl p-8">
                   <h3 className="text-xl font-medium mb-6 flex items-center gap-2">
-                    <Layers className="w-6 h-6 text-indigo-400" /> Semester Details
+                    <Layers className="w-6 h-6 text-indigo-400" /> Semester
+                    Details
                   </h3>
-                  
+
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-2">Semester</label>
-                      <select 
+                      <label className="block text-sm font-medium text-slate-400 mb-2">
+                        Semester
+                      </label>
+                      <select
                         value={semester}
                         onChange={handleSemesterChange}
                         className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-shadow appearance-none"
                       >
-                        <option value="" disabled>Select a Semester</option>
+                        <option value="" disabled>
+                          Select a Semester
+                        </option>
                         <option value="1st">1st Semester</option>
                         <option value="2nd">2nd Semester</option>
                         <option value="3rd">3rd Semester</option>
@@ -347,40 +537,56 @@ export default function ExtractMarks() {
                         <option value="8th">8th Semester</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <label className="text-sm font-medium text-slate-400">Subject Mapping</label>
+                        <label className="text-sm font-medium text-slate-400">
+                          Subject Mapping
+                        </label>
                         <span className="text-xs font-semibold bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-500/30">
                           {customSubjects.length} subjects
                         </span>
                       </div>
-                      
+
                       <div className="bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
                         <div className="max-h-[430px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
                           {semester === "" ? (
-                            <p className="text-sm text-slate-500 text-center py-6">Please select a semester above to view and configure its subjects.</p>
+                            <p className="text-sm text-slate-500 text-center py-6">
+                              Please select a semester above to view and
+                              configure its subjects.
+                            </p>
                           ) : customSubjects.length === 0 ? (
-                            <p className="text-sm text-slate-500 text-center py-6">No predefined subjects for this semester. The extractor will use regex to guess column headers.</p>
+                            <p className="text-sm text-slate-500 text-center py-6">
+                              No predefined subjects for this semester. The
+                              extractor will use regex to guess column headers.
+                            </p>
                           ) : (
                             customSubjects.map((info, idx) => (
-                              <div key={`idx-${idx}`} className="flex gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 items-end">
+                              <div
+                                key={`idx-${idx}`}
+                                className="flex gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 items-end"
+                              >
                                 <div className="space-y-1.5 w-1/4 min-w-[100px]">
-                                  <label className="text-xs font-mono font-bold text-indigo-400">Code</label>
-                                  <input 
+                                  <label className="text-xs font-mono font-bold text-indigo-400">
+                                    Code
+                                  </label>
+                                  <input
                                     type="text"
                                     value={info.code}
                                     onChange={(e) => {
                                       const newSubjects = [...customSubjects];
-                                      newSubjects[idx].code = e.target.value.toUpperCase();
+                                      newSubjects[idx].code =
+                                        e.target.value.toUpperCase();
                                       setCustomSubjects(newSubjects);
                                     }}
                                     className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors uppercase"
                                   />
                                 </div>
                                 <div className="flex-1 space-y-1.5 min-w-[150px]">
-                                  <label className="text-xs font-mono font-bold text-indigo-400">Subject Name</label>
-                                  <input 
+                                  <label className="text-xs font-mono font-bold text-indigo-400">
+                                    Subject Name
+                                  </label>
+                                  <input
                                     type="text"
                                     value={info.name}
                                     onChange={(e) => {
@@ -392,14 +598,18 @@ export default function ExtractMarks() {
                                   />
                                 </div>
                                 <div className="space-y-1.5 w-24 min-w-[80px]">
-                                  <label className="text-xs font-mono font-bold text-indigo-400">Credits</label>
-                                  <input 
+                                  <label className="text-xs font-mono font-bold text-indigo-400">
+                                    Credits
+                                  </label>
+                                  <input
                                     type="number"
                                     value={info.credits}
-                                    min={0} max={10}
+                                    min={0}
+                                    max={10}
                                     onChange={(e) => {
                                       const newSubjects = [...customSubjects];
-                                      newSubjects[idx].credits = parseInt(e.target.value) || 0;
+                                      newSubjects[idx].credits =
+                                        parseInt(e.target.value) || 0;
                                       setCustomSubjects(newSubjects);
                                     }}
                                     className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors"
@@ -407,24 +617,33 @@ export default function ExtractMarks() {
                                 </div>
                                 <button
                                   onClick={() => {
-                                    const newSubjects = customSubjects.filter((_, i) => i !== idx);
+                                    const newSubjects = customSubjects.filter(
+                                      (_, i) => i !== idx,
+                                    );
                                     setCustomSubjects(newSubjects);
                                   }}
-                                  className="p-2.5 mb-[1px] rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 transition-colors shrink-0"
+                                  className="p-2.5 mb-px rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 transition-colors shrink-0"
                                 >
                                   <Trash2 className="w-5 h-5" />
                                 </button>
                               </div>
                             ))
                           )}
-                          
+
                           {semester !== "" && (
                             <button
-                              onClick={() => setCustomSubjects([...customSubjects, { code: "", name: "", credits: 0 }])}
+                              onClick={() =>
+                                setCustomSubjects([
+                                  ...customSubjects,
+                                  { code: "", name: "", credits: 0 },
+                                ])
+                              }
                               className="w-full py-3 border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-lg text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-800/50 transition-all text-sm font-medium group mt-4!"
                             >
                               <Plus className="w-4 h-4 group-hover:text-indigo-400 transition-colors" />
-                              <span className="group-hover:text-white transition-colors">Add Subject</span>
+                              <span className="group-hover:text-white transition-colors">
+                                Add Subject
+                              </span>
                             </button>
                           )}
                         </div>
@@ -434,13 +653,13 @@ export default function ExtractMarks() {
                 </div>
 
                 <div className="flex justify-between pt-4">
-                  <button 
+                  <button
                     onClick={() => setStep(1)}
                     className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
                   >
                     <ArrowLeft className="w-5 h-5" /> Back
                   </button>
-                  <button 
+                  <button
                     onClick={processFiles}
                     disabled={semester === ""}
                     className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20 disabled:shadow-none"
@@ -455,7 +674,8 @@ export default function ExtractMarks() {
             {step === 3 && (
               <motion.div
                 key="step3"
-                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
                 className="flex flex-col items-center justify-center py-20"
               >
                 <div className="w-24 h-24 relative mb-12">
@@ -465,8 +685,10 @@ export default function ExtractMarks() {
                     <FileText className="w-8 h-8 text-blue-400" />
                   </div>
                 </div>
-                
-                <h2 className="text-3xl font-bold text-white mb-3">Extracting Data</h2>
+
+                <h2 className="text-3xl font-bold text-white mb-3">
+                  Extracting Data
+                </h2>
                 <p className="text-slate-400 mb-8 max-w-sm text-center">
                   Parsing {files.length} PDFs.
                 </p>
@@ -474,14 +696,20 @@ export default function ExtractMarks() {
                 {progress && (
                   <div className="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
                     <div className="flex justify-between text-sm font-medium mb-2">
-                      <span className="text-indigo-400">Batch {progress.current} of {progress.total}</span>
-                      <span className="text-slate-400">{Math.round((progress.current / progress.total) * 100)}%</span>
+                      <span className="text-indigo-400">
+                        Batch {progress.current} of {progress.total}
+                      </span>
+                      <span className="text-slate-400">
+                        {Math.round((progress.current / progress.total) * 100)}%
+                      </span>
                     </div>
                     <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
-                      <motion.div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                      <motion.div
+                        className="h-full bg-linear-to-r from-blue-500 to-indigo-500"
                         initial={{ width: 0 }}
-                        animate={{ width: `${(progress.current / progress.total) * 100}%` }}
+                        animate={{
+                          width: `${(progress.current / progress.total) * 100}%`,
+                        }}
                         transition={{ ease: "linear" }}
                       />
                     </div>
@@ -494,7 +722,8 @@ export default function ExtractMarks() {
             {step === 4 && results && (
               <motion.div
                 key="step4"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 className="space-y-6 w-full"
               >
                 <div className="glass-card rounded-2xl p-6 md:p-8">
@@ -503,20 +732,35 @@ export default function ExtractMarks() {
                       <h2 className="text-2xl font-bold text-emerald-400 flex items-center gap-2 mb-1">
                         <CheckCircle className="w-6 h-6" /> Extraction Complete
                       </h2>
-                      <p className="text-slate-400">Found data for <span className="text-white font-bold">{results.length}</span> students across {files.length} files.</p>
+                      <p className="text-slate-400">
+                        Found data for{" "}
+                        <span className="text-white font-bold">
+                          {results.length}
+                        </span>{" "}
+                        students across {files.length} files.
+                      </p>
                     </div>
-                    
+
                     <div className="flex gap-3">
-                      <button 
-                         onClick={() => {
-                          const url = window.location.href;
-                          navigator.clipboard.writeText(url);
-                        }}
-                        className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-all border border-slate-700 flex items-center gap-2"
+                      <button
+                        onClick={handleCopyLink}
+                        disabled={isUploading}
+                        className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium rounded-xl transition-all border border-slate-700 flex items-center gap-2"
                       >
-                        <Copy className="w-5 h-5" /> Copy link
+                        {isUploading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Copy className="w-5 h-5" />
+                        )}
+                        {isUploading ? "Uploading..." : "Copy link"}
                       </button>
-                      <button 
+                      <button
+                        onClick={() => setShowEmailModal(true)}
+                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
+                      >
+                        <Mail className="w-5 h-5" /> Email Results
+                      </button>
+                      <button
                         onClick={downloadExcel}
                         className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
                       >
@@ -526,9 +770,7 @@ export default function ExtractMarks() {
                   </div>
 
                   {/* AG Grid Container */}
-                  <div 
-                    className="w-full h-[600px] border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark"
-                  >
+                  <div className="w-full h-[600px] border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark">
                     <AgGridReact
                       theme={themeQuartz}
                       rowData={results}
@@ -545,11 +787,69 @@ export default function ExtractMarks() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Email Modal */}
+        <AnimatePresence>
+          {showEmailModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl w-full max-w-sm relative"
+              >
+                <button
+                  onClick={() => setShowEmailModal(false)}
+                  className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Send Results via Email
+                </h3>
+                <p className="text-sm text-slate-400 mb-6">
+                  Enter the recipient's email address. The Excel file will be
+                  attached.
+                </p>
+
+                <form onSubmit={handleEmailResults} className="space-y-4">
+                  <input
+                    type="email"
+                    required
+                    value={emailRecipient}
+                    onChange={(e) => setEmailRecipient(e.target.value)}
+                    placeholder="recipient@university.edu"
+                    className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isEmailing || !emailRecipient}
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    {isEmailing ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Mail className="w-5 h-5" />
+                    )}
+                    {isEmailing ? "Sending..." : "Send Email"}
+                  </button>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
       <Footer />
-      
+
       {/* Scrollbar styling */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -567,7 +867,9 @@ export default function ExtractMarks() {
           --ag-row-hover-color: rgba(51, 65, 85, 0.3) !important;
           max-width: 100%;
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 }

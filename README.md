@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EvalX
 
-## Getting Started
+EvalX is a Next.js frontend with a FastAPI backend for extracting marks from uploaded PDF result sheets.
 
-First, run the development server:
+## Tech Stack
+
+- Frontend: Next.js (App Router), React, TypeScript
+- Backend: FastAPI, PyMuPDF
+- Data/Auth/Email integrations: MongoDB, JWT, Resend, Vercel Blob
+
+## Prerequisites
+
+- Node.js 20+
+- npm 10+
+- Python 3.10+
+
+## 1. Install Dependencies
+
+### Frontend dependencies
+
+```bash
+npm install
+```
+
+### Backend dependencies
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## 2. Environment Variables
+
+Create `.env.local` in project root with values like:
+
+```bash
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM="EvalX <onboarding@resend.dev>"
+```
+
+Notes:
+
+- `MONGODB_URI` and `JWT_SECRET` are needed for login/auth flows.
+- `RESEND_API_KEY` is needed for OTP and email result routes.
+- `RESEND_FROM` is optional. Set it to your verified sender/domain in Resend.
+- PDF extraction route itself is handled by FastAPI (`/api/extract`).
+
+## Authentication Flow
+
+- Signup: email + password
+- First-time verification: OTP via email
+- Subsequent logins: email + password only
+
+## 3. Run Locally (Frontend + Backend)
+
+Use two terminals from the project root.
+
+### Terminal 1: Start FastAPI backend
+
+```bash
+source venv/bin/activate
+uvicorn api.index:app --host 127.0.0.1 --port 8000 --reload
+```
+
+### Terminal 2: Start Next.js frontend
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+In development, Next.js rewrites `/api/*` to `http://127.0.0.1:8000/api/*`, so the frontend can call backend endpoints directly.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 4. Production Build
 
-## Learn More
+```bash
+npm run build
+npm run start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## API Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Local extraction endpoint: `POST http://127.0.0.1:8000/api/extract`
+- Frontend calls extraction as `POST /api/extract` (rewritten to FastAPI in dev)
+- On Vercel, `vercel.json` routes `/api/*` to `api/index.py`

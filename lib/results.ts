@@ -32,12 +32,44 @@ const CANDIDATE_NAME_KEYS = ["Name", "Student Name", "Student"];
 const CANDIDATE_SCORE_KEYS = ["SGPA", "CGPA", "GPA", "Percentage"];
 
 function getString(row: RawResultRow, keys: string[]): string {
-  for (const key of keys) {
-    const value = row[key];
+  const readValue = (value: unknown): string => {
     if (typeof value === "string" && value.trim().length > 0) {
       return value.trim();
     }
+    if (Array.isArray(value) && typeof value[0] === "string") {
+      const first = value[0].trim();
+      if (first.length > 0) {
+        return first;
+      }
+    }
+    return "";
+  };
+
+  for (const key of keys) {
+    const direct = readValue(row[key]);
+    if (direct) {
+      return direct;
+    }
   }
+
+  const normalizedEntries = Object.entries(row).map(
+    ([key, value]) => [key.trim().toLowerCase(), value] as const,
+  );
+
+  for (const candidate of keys.map((key) => key.trim().toLowerCase())) {
+    const matched = normalizedEntries.find(
+      ([normalizedKey]) => normalizedKey === candidate,
+    );
+    if (!matched) {
+      continue;
+    }
+
+    const fromNormalized = readValue(matched[1]);
+    if (fromNormalized) {
+      return fromNormalized;
+    }
+  }
+
   return "";
 }
 

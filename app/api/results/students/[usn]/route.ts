@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
 import connectToDatabase from "../../../../../lib/mongodb";
 import { getAuthenticatedUser } from "../../../../../lib/server-auth";
 import SavedResult from "../../../../../models/SavedResult";
 import {
-  getScore,
   getStudentName,
   getStudentUsn,
-  isPassing,
   parseSubjects,
   RawResultRow,
   SemesterStudentRecord,
@@ -27,57 +26,38 @@ export async function GET(_req: Request, context: { params: Promise<Params> }) {
     const targetUsn = decodeURIComponent(usn).toUpperCase().trim();
 
     await connectToDatabase();
+    const userId = new Types.ObjectId(authUser.id);
 
-    // Use aggregation pipeline to filter on server side
-    const aggregationResult = await SavedResult.aggregate([
-      { $match: { userId: authUser.id } },
+    // Unwind on DB side, then use helper-based matching for mixed key support.
+    const rows = await SavedResult.aggregate([
+      { $match: { userId } },
       { $sort: { createdAt: -1 } },
       { $unwind: { path: "$resultsData", preserveNullAndEmptyArrays: false } },
       {
-        $addFields: {
-          "resultsData.usn": {
-            $toUpper: {
-              $trim: {
-                input: {
-                  $cond: [
-                    { $isArray: ["$resultsData.usn"] },
-                    { $arrayElemAt: ["$resultsData.usn", 0] },
-                    "$resultsData.usn",
-                  ],
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        $match: {
-          "resultsData.usn": targetUsn,
-        },
-      },
-      {
-        $group: {
-          _id: "$_id",
-          semester: { $first: "$semester" },
-          createdAt: { $first: "$createdAt" },
-          resultsData: { $first: "$resultsData" },
+        $project: {
+          _id: 1,
+          semester: 1,
+          createdAt: 1,
+          row: "$resultsData",
         },
       },
       { $sort: { createdAt: -1 } },
     ]).exec();
 
-    if (aggregationResult.length === 0) {
-      return NextResponse.json(
-        { message: "Student not found" },
-        { status: 404 },
-      );
-    }
-
     const semesterRecords: SemesterStudentRecord[] = [];
     let studentName = "Unknown";
 
-    for (const run of aggregationResult) {
-      const row = run.resultsData as RawResultRow;
+    for (const run of rows as Array<{
+      _id: unknown;
+      semester: string;
+      createdAt: Date | string;
+      row: RawResultRow;
+    }>) {
+      const row = run.row;
+      if (getStudentUsn(row) !== targetUsn) {
+        continue;
+      }
+
       studentName = getStudentName(row) || studentName;
       semesterRecords.push({
         semester: run.semester,
@@ -87,6 +67,13 @@ export async function GET(_req: Request, context: { params: Promise<Params> }) {
         name: studentName,
         subjects: parseSubjects(row),
       });
+    }
+
+    if (semesterRecords.length === 0) {
+      return NextResponse.json(
+        { message: "Student not found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json(

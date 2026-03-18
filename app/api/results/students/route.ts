@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
 import connectToDatabase from "../../../../lib/mongodb";
 import { getAuthenticatedUser } from "../../../../lib/server-auth";
 import SavedResult from "../../../../models/SavedResult";
 import {
-  getScore,
   getStudentName,
   getStudentUsn,
   RawResultRow,
@@ -23,29 +23,44 @@ export async function GET() {
     }
 
     await connectToDatabase();
+    const userId = new Types.ObjectId(authUser.id);
 
-    // Use aggregation pipeline to extract students server-side (faster)
-    const results = await SavedResult.aggregate([
-      { $match: { userId: authUser.id } },
+    // Unwind rows in MongoDB and normalize USN/Name in TS using shared helpers.
+    const rows = await SavedResult.aggregate([
+      { $match: { userId } },
       { $sort: { createdAt: -1 } },
       { $unwind: "$resultsData" },
       {
-        $group: {
-          _id: { $toUpper: "$resultsData.USN" },
-          name: { $first: "$resultsData.Name" },
-          latestRunAt: { $first: "$createdAt" },
+        $project: {
+          createdAt: 1,
+          row: "$resultsData",
         },
       },
-      { $sort: { _id: 1 } },
-    ]);
+    ]).exec();
 
-    const students: StudentListItem[] = results
-      .filter((r) => r._id && r._id !== "NOT_FOUND")
-      .map((r) => ({
-        usn: r._id,
-        name: r.name || "Unknown",
-        latestRunAt: new Date(r.latestRunAt).toISOString(),
-      }));
+    const byUsn = new Map<string, StudentListItem>();
+    for (const entry of rows as Array<{
+      createdAt: Date | string;
+      row: RawResultRow;
+    }>) {
+      const usn = getStudentUsn(entry.row);
+      if (!usn || usn === "NOT_FOUND") {
+        continue;
+      }
+
+      // Since rows are sorted by createdAt desc, first hit per USN is latest.
+      if (!byUsn.has(usn)) {
+        byUsn.set(usn, {
+          usn,
+          name: getStudentName(entry.row) || "Unknown",
+          latestRunAt: new Date(entry.createdAt).toISOString(),
+        });
+      }
+    }
+
+    const students = [...byUsn.values()].sort((a, b) =>
+      a.usn.localeCompare(b.usn),
+    );
 
     return NextResponse.json({ students }, { status: 200 });
   } catch (error) {

@@ -40,6 +40,7 @@ function LoginContent() {
       await axios.post("/api/auth/login", { email, password });
       setSuccessMsg("Logged in successfully. Redirecting...");
       setTimeout(() => {
+        router.refresh();
         router.push(redirectPath);
       }, 800);
     } catch (err: unknown) {
@@ -72,6 +73,7 @@ function LoginContent() {
       await axios.post("/api/auth/verify-otp", { email, otp });
       setSuccessMsg("Authenticated successfully! Redirecting...");
       setTimeout(() => {
+        router.refresh();
         router.push(redirectPath);
       }, 1000);
     } catch (err: unknown) {

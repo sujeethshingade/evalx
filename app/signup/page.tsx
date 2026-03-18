@@ -66,7 +66,10 @@ export default function SignupPage() {
     try {
       await axios.post("/api/auth/verify-otp", { email, otp });
       setSuccessMsg("Account verified. Redirecting to Student Results...");
-      setTimeout(() => router.push("/student-results"), 900);
+      setTimeout(() => {
+        router.refresh();
+        router.push("/student-results");
+      }, 900);
     } catch (err: unknown) {
       setError(
         axios.isAxiosError(err)

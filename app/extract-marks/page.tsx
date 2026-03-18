@@ -175,6 +175,9 @@ export default function ExtractMarks() {
   const [isEmailing, setIsEmailing] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
+  const [emailStatus, setEmailStatus] = useState("");
+  const [extractError, setExtractError] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -270,7 +273,7 @@ export default function ExtractMarks() {
           errorMessage += `\n${error.message}`;
         }
       }
-      alert(`${errorMessage}\nPlease try again.`);
+      setExtractError(`${errorMessage} Please try again.`);
       setStep(2); // Fallback to Config step
     } finally {
       setProgress(null);
@@ -313,9 +316,11 @@ export default function ExtractMarks() {
         semester,
       });
       await navigator.clipboard.writeText(data.url);
-      alert("Public link copied to clipboard successfully:\n" + data.url);
+      setCopyStatus("Copied to clipboard!");
+      setTimeout(() => setCopyStatus(""), 3000);
     } catch (err) {
-      alert("Failed to upload the file to Vercel Blob.");
+      setCopyStatus("Failed to upload. Please try again.");
+      setTimeout(() => setCopyStatus(""), 4000);
       console.error(err);
     } finally {
       setIsUploading(false);
@@ -332,11 +337,14 @@ export default function ExtractMarks() {
         semester,
         emailRecipient,
       });
-      alert("Results sent successfully to " + emailRecipient);
-      setShowEmailModal(false);
-      setEmailRecipient("");
+      setEmailStatus("Sent successfully!");
+      setTimeout(() => {
+        setShowEmailModal(false);
+        setEmailRecipient("");
+        setEmailStatus("");
+      }, 1500);
     } catch (err) {
-      alert("Failed to send email.");
+      setEmailStatus("Failed to send email. Please try again.");
       console.error(err);
     } finally {
       setIsEmailing(false);
@@ -453,7 +461,7 @@ export default function ExtractMarks() {
                       </button>
                     </div>
 
-                    <div className="max-h-[230px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                    <div className="max-h-57.5 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                       {files.map((file, idx) => (
                         <div
                           key={`${file.name}-${idx}`}
@@ -549,7 +557,7 @@ export default function ExtractMarks() {
                       </div>
 
                       <div className="bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
-                        <div className="max-h-[430px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                        <div className="max-h-107.5 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                           {semester === "" ? (
                             <p className="text-sm text-slate-500 text-center py-6">
                               Please select a semester above to view and
@@ -566,7 +574,7 @@ export default function ExtractMarks() {
                                 key={`idx-${idx}`}
                                 className="flex gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 items-end"
                               >
-                                <div className="space-y-1.5 w-1/4 min-w-[100px]">
+                                <div className="space-y-1.5 w-1/4 min-w-25">
                                   <label className="text-xs font-mono font-bold text-indigo-400">
                                     Code
                                   </label>
@@ -582,7 +590,7 @@ export default function ExtractMarks() {
                                     className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors uppercase"
                                   />
                                 </div>
-                                <div className="flex-1 space-y-1.5 min-w-[150px]">
+                                <div className="flex-1 space-y-1.5 min-w-37.5">
                                   <label className="text-xs font-mono font-bold text-indigo-400">
                                     Subject Name
                                   </label>
@@ -597,7 +605,7 @@ export default function ExtractMarks() {
                                     className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors"
                                   />
                                 </div>
-                                <div className="space-y-1.5 w-24 min-w-[80px]">
+                                <div className="space-y-1.5 w-24 min-w-20">
                                   <label className="text-xs font-mono font-bold text-indigo-400">
                                     Credits
                                   </label>
@@ -652,6 +660,11 @@ export default function ExtractMarks() {
                   </div>
                 </div>
 
+                {extractError && (
+                  <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+                    {extractError}
+                  </p>
+                )}
                 <div className="flex justify-between pt-4">
                   <button
                     onClick={() => setStep(1)}
@@ -660,7 +673,10 @@ export default function ExtractMarks() {
                     <ArrowLeft className="w-5 h-5" /> Back
                   </button>
                   <button
-                    onClick={processFiles}
+                    onClick={() => {
+                      setExtractError("");
+                      processFiles();
+                    }}
                     disabled={semester === ""}
                     className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20 disabled:shadow-none"
                   >
@@ -741,36 +757,49 @@ export default function ExtractMarks() {
                       </p>
                     </div>
 
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleCopyLink}
-                        disabled={isUploading}
-                        className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium rounded-xl transition-all border border-slate-700 flex items-center gap-2"
-                      >
-                        {isUploading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <Copy className="w-5 h-5" />
-                        )}
-                        {isUploading ? "Uploading..." : "Copy link"}
-                      </button>
-                      <button
-                        onClick={() => setShowEmailModal(true)}
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
-                      >
-                        <Mail className="w-5 h-5" /> Email Results
-                      </button>
-                      <button
-                        onClick={downloadExcel}
-                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
-                      >
-                        <Download className="w-5 h-5" /> Download Excel
-                      </button>
+                    <div className="flex flex-col gap-2">
+                      {copyStatus && (
+                        <p
+                          className={`text-sm text-center font-medium ${
+                            copyStatus.startsWith("Copied")
+                              ? "text-emerald-400"
+                              : "text-red-400"
+                          }`}
+                        >
+                          {copyStatus}
+                        </p>
+                      )}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleCopyLink}
+                          disabled={isUploading}
+                          className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium rounded-xl transition-all border border-slate-700 flex items-center gap-2"
+                        >
+                          {isUploading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <Copy className="w-5 h-5" />
+                          )}
+                          {isUploading ? "Uploading..." : "Copy link"}
+                        </button>
+                        <button
+                          onClick={() => setShowEmailModal(true)}
+                          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
+                        >
+                          <Mail className="w-5 h-5" /> Email Results
+                        </button>
+                        <button
+                          onClick={downloadExcel}
+                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
+                        >
+                          <Download className="w-5 h-5" /> Download Excel
+                        </button>
+                      </div>
                     </div>
                   </div>
 
                   {/* AG Grid Container */}
-                  <div className="w-full h-[600px] border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark">
+                  <div className="w-full h-150 border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark">
                     <AgGridReact
                       theme={themeQuartz}
                       rowData={results}
@@ -826,6 +855,17 @@ export default function ExtractMarks() {
                     placeholder="recipient@university.edu"
                     className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white outline-none"
                   />
+                  {emailStatus && (
+                    <p
+                      className={`text-sm text-center font-medium ${
+                        emailStatus.startsWith("Sent")
+                          ? "text-emerald-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {emailStatus}
+                    </p>
+                  )}
                   <button
                     type="submit"
                     disabled={isEmailing || !emailRecipient}

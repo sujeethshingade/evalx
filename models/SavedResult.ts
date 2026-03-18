@@ -5,8 +5,9 @@ export interface ISavedResult extends Document {
   semester: string;
   totalStudents: number;
   resultsData: Record<string, unknown>[];
-  excelData: Buffer;
+  excelData?: Buffer;
   excelFileName: string;
+  excelFileUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,7 +37,11 @@ const SavedResultSchema = new Schema<ISavedResult>(
     },
     excelData: {
       type: Buffer,
-      required: true,
+      required: false,
+    },
+    excelFileUrl: {
+      type: String,
+      required: false,
     },
     excelFileName: {
       type: String,

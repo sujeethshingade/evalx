@@ -49,6 +49,7 @@ type SavedRun = {
   semester: string;
   totalStudents: number;
   excelFileName: string;
+  excelFileUrl?: string;
   createdAt: string;
 };
 
@@ -93,6 +94,25 @@ const SavedRunCard = memo<{
       </p>
     </div>
     <div className="flex items-center gap-2 flex-wrap">
+      {run.excelFileUrl ? (
+        <a
+          href={run.excelFileUrl}
+          target="_blank"
+          rel="noreferrer"
+          download={run.excelFileName}
+          className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-500/20"
+        >
+          <Download className="h-4 w-4" /> Download
+        </a>
+      ) : (
+        <a
+          href={`/api/results/runs/${run._id}/excel`}
+          download={run.excelFileName}
+          className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-500/20"
+        >
+          <Download className="h-4 w-4" /> Download
+        </a>
+      )}
       <button
         onClick={() => onView(run._id)}
         className="inline-flex items-center gap-2 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-300 hover:bg-purple-500/20"

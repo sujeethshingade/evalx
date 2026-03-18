@@ -19,11 +19,22 @@ export async function GET(_req: Request, context: { params: Promise<Params> }) {
     await connectToDatabase();
 
     const run = await SavedResult.findOne({ _id: id, userId: authUser.id })
-      .select("excelData excelFileName")
+      .select("excelData excelFileName excelFileUrl")
       .lean();
 
     if (!run) {
       return NextResponse.json({ message: "Not found" }, { status: 404 });
+    }
+
+    if (run.excelFileUrl) {
+      return NextResponse.redirect(run.excelFileUrl);
+    }
+
+    if (!run.excelData) {
+      return NextResponse.json(
+        { message: "No excel data found for this run." },
+        { status: 404 },
+      );
     }
 
     return new NextResponse(new Uint8Array(run.excelData), {

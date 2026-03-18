@@ -184,6 +184,7 @@ export default function ExtractMarks() {
   const [emailStatus, setEmailStatus] = useState("");
   const [extractError, setExtractError] = useState("");
   const [saveStatus, setSaveStatus] = useState("");
+  const [excelFileUrl, setExcelFileUrl] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -267,10 +268,13 @@ export default function ExtractMarks() {
 
       setSaveStatus("Saving extracted data...");
       try {
-        await axios.post("/api/results/runs", {
+        const saveRes = await axios.post("/api/results/runs", {
           semester,
           results: allExtractedData,
         });
+        if (saveRes.data?.run?.excelFileUrl) {
+          setExcelFileUrl(saveRes.data.run.excelFileUrl);
+        }
         setSaveStatus("Saved successfully. Available in student results.");
       } catch (saveError) {
         console.error("Failed to save extracted data:", saveError);
@@ -425,17 +429,24 @@ export default function ExtractMarks() {
 
   const handleCopyLink = async () => {
     if (!results) return;
+
     setIsUploading(true);
     try {
-      const { data } = await axios.post("/api/blob/upload", {
-        results,
-        semester,
-      });
-      await navigator.clipboard.writeText(data.url);
+      let finalUrl = excelFileUrl;
+      // Fallback if Vercel blob URL was not saved automatically
+      if (!finalUrl) {
+        const { data } = await axios.post("/api/blob/upload", {
+          results,
+          semester,
+        });
+        finalUrl = data.url;
+      }
+
+      await navigator.clipboard.writeText(finalUrl);
       setCopyStatus("Copied to clipboard!");
       setTimeout(() => setCopyStatus(""), 3000);
     } catch (err) {
-      setCopyStatus("Failed to upload. Please try again.");
+      setCopyStatus("Failed to copy link. Please try again.");
       setTimeout(() => setCopyStatus(""), 4000);
       console.error(err);
     } finally {

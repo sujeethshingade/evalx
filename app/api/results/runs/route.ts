@@ -23,7 +23,7 @@ export async function GET() {
 
     const runs = await SavedResult.find({ userId: authUser.id })
       .sort({ createdAt: -1 })
-      .select("_id semester totalStudents excelFileName createdAt")
+      .select("_id semester totalStudents excelFileName excelFileUrl createdAt")
       .lean();
 
     return NextResponse.json({ runs }, { status: 200 });
@@ -67,13 +67,26 @@ export async function POST(req: Request) {
 
     const fileName = `EvalX_Results_Sem_${semester}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
+    let excelFileUrl = "";
+    try {
+      const { put } = await import("@vercel/blob");
+      const blob = await put(fileName, excelData, {
+        access: "public",
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      excelFileUrl = blob.url;
+    } catch (uploadError) {
+      console.error("Vercel Blob Upload Error during save:", uploadError);
+    }
+
     await connectToDatabase();
     const saved = await SavedResult.create({
       userId: authUser.id,
       semester,
       totalStudents: rawResults.length,
       resultsData: rawResults,
-      excelData,
+      excelFileUrl,
       excelFileName: fileName,
     });
 
@@ -85,6 +98,7 @@ export async function POST(req: Request) {
           semester: saved.semester,
           totalStudents: saved.totalStudents,
           excelFileName: saved.excelFileName,
+          excelFileUrl: saved.excelFileUrl,
           createdAt: saved.createdAt,
         },
       },

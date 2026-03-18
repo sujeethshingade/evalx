@@ -6,7 +6,12 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, Loader2, Trash2, X } from "lucide-react";
 import { AgGridReact } from "ag-grid-react";
-import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
+import {
+  ModuleRegistry,
+  AllCommunityModule,
+  themeQuartz,
+  colorSchemeDark,
+} from "ag-grid-community";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
@@ -128,10 +133,30 @@ export default function StudentResultsPage() {
 
   const colDefs = useMemo(() => {
     if (!gridData || gridData.length === 0) return [];
-    return Object.keys(gridData[0]).map((key) => ({
+
+    const allKeys = Object.keys(gridData[0]);
+    const priorityPattern = /Name|Internal|External|Total|Result/i;
+
+    // Separate name key and score keys
+    const nameKey = allKeys.find(
+      (k) =>
+        /name|student/i.test(k) && !/internal|external|total|result/i.test(k),
+    );
+    const scoreKeys = allKeys.filter(
+      (k) => priorityPattern.test(k) && k !== nameKey,
+    );
+
+    // Build column definitions
+    const columns: typeof allKeys = [];
+    if (nameKey) columns.push(nameKey);
+    columns.push(...scoreKeys);
+    columns.push(...allKeys.filter((k) => !columns.includes(k)));
+
+    return columns.map((key) => ({
       field: key,
-      flex: 1,
-      minWidth: 120,
+      headerName: key.replace(/_/g, " "),
+      flex: key === nameKey ? 1.5 : 1,
+      minWidth: key === nameKey ? 200 : 100,
       filter: false,
       sortable: true,
       resizable: true,
@@ -500,41 +525,70 @@ export default function StudentResultsPage() {
 
       {/* AG Grid Modal */}
       {gridData !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-7xl h-[90vh] bg-slate-950 rounded-2xl border border-slate-800 flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-slate-800">
-              <h2 className="text-md font-semibold text-white">
-                {gridData.length} Records
-              </h2>
-              <button
-                onClick={() => setGridData(null)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {loadingGrid ? (
-              <div className="flex items-center justify-center grow">
-                <div className="text-slate-400 flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading data...
-                </div>
-              </div>
-            ) : (
-              <div className="grow relative overflow-hidden">
-                <AgGridReact
-                  columnDefs={colDefs}
-                  rowData={gridData}
-                  defaultColDef={defaultColDef}
-                  containerStyle={{ height: "100%", width: "100%" }}
-                />
-              </div>
-            )}
+        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
+          <div className="flex items-center justify-between p-4 border-b border-slate-800 shrink-0">
+            <h2 className="text-md font-semibold text-white">
+              {gridData.length} Records
+            </h2>
+            <button
+              onClick={() => setGridData(null)}
+              className="text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
           </div>
+
+          {loadingGrid ? (
+            <div className="flex items-center justify-center grow">
+              <div className="text-slate-400 flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading data...
+              </div>
+            </div>
+          ) : (
+            <div className="grow relative overflow-hidden flex flex-col ag-theme-quartz-dark p-6 px-10 pb-10">
+              <AgGridReact
+                theme={themeQuartz.withPart(colorSchemeDark)}
+                rowData={gridData}
+                columnDefs={colDefs}
+                defaultColDef={defaultColDef}
+                pagination={true}
+                paginationPageSize={20}
+                paginationPageSizeSelector={[20, 50, 100]}
+                suppressMovableColumns={false}
+                enableCellTextSelection={true}
+                className="w-full h-full text-sm rounded-xl border border-slate-700/50 shadow-inner"
+                containerStyle={{ height: "100%", width: "100%" }}
+              />
+            </div>
+          )}
         </div>
       )}
 
       <Footer />
+
+      {/* Grid styling */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        .ag-theme-quartz-dark {
+          --ag-background-color: transparent !important;
+          --ag-header-background-color: rgba(30, 41, 59, 1) !important;
+          --ag-foreground-color: #ffffff !important;
+          --ag-header-foreground-color: #cbd5e1 !important;
+          --ag-border-color: rgba(51, 65, 85, 0.5) !important;
+          --ag-row-border-color: rgba(51, 65, 85, 0.5) !important;
+          --ag-odd-row-background-color: rgba(15, 23, 42, 0.5) !important;
+          --ag-data-color: #ffffff !important;
+          --ag-row-hover-color: rgba(51, 65, 85, 0.3) !important;
+        }
+      `,
+        }}
+      />
     </div>
   );
 }

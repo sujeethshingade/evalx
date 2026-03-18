@@ -29,6 +29,7 @@ import {
   ModuleRegistry,
   AllCommunityModule,
   themeQuartz,
+  colorSchemeDark,
 } from "ag-grid-community";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -391,7 +392,7 @@ export default function ExtractMarks() {
     <div className="flex flex-col min-h-screen bg-slate-950 text-slate-200">
       <Header />
 
-      <main className="grow p-4 md:p-8 relative overflow-hidden flex flex-col items-center max-h-[calc(100vh-7.5rem)]">
+      <main className="grow p-4 md:p-8 flex flex-col items-center w-full">
         {/* Step Indicator */}
         <div className="w-full max-w-xl mb-12 mt-4 shrink-0">
           <div className="flex items-center justify-between relative">
@@ -432,7 +433,7 @@ export default function ExtractMarks() {
           </div>
         </div>
 
-        <div className="max-w-6xl relative z-10 w-full overflow-y-auto px-2 flex-1">
+        <div className="max-w-8xl relative z-10 w-full px-2 flex-1 pb-8">
           <AnimatePresence mode="wait">
             {/* STEP 1: UPLOAD */}
             {step === 1 && (
@@ -497,7 +498,9 @@ export default function ExtractMarks() {
                       </button>
                     </div>
 
-                    <div className="max-h-57.5 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                    <div
+                      className={`space-y-2 ${files.length > 5 ? "max-h-70 overflow-y-auto pr-2 custom-scrollbar" : ""}`}
+                    >
                       {files.map((file, idx) => (
                         <div
                           key={`${file.name}-${idx}`}
@@ -540,7 +543,7 @@ export default function ExtractMarks() {
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
-                className="space-y-6 max-w-6xl mx-auto pb-8"
+                className="space-y-6 max-w-8xl mx-auto pb-8"
               >
                 <div className="text-center mb-8">
                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
@@ -593,7 +596,7 @@ export default function ExtractMarks() {
                       </div>
 
                       <div className="bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
-                        <div className="max-h-107.5 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                        <div className="p-4">
                           {semester === "" ? (
                             <p className="text-sm text-slate-500 text-center py-6">
                               Please select a semester above to view and
@@ -605,73 +608,94 @@ export default function ExtractMarks() {
                               extractor will use regex to guess column headers.
                             </p>
                           ) : (
-                            customSubjects.map((info, idx) => (
-                              <div
-                                key={`idx-${idx}`}
-                                className="flex gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 items-end"
-                              >
-                                <div className="space-y-1.5 w-1/4 min-w-25">
-                                  <label className="text-xs font-mono font-bold text-indigo-400">
-                                    Code
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={info.code}
-                                    onChange={(e) => {
-                                      const newSubjects = [...customSubjects];
-                                      newSubjects[idx].code =
-                                        e.target.value.toUpperCase();
-                                      setCustomSubjects(newSubjects);
-                                    }}
-                                    className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors uppercase"
-                                  />
-                                </div>
-                                <div className="flex-1 space-y-1.5 min-w-37.5">
-                                  <label className="text-xs font-mono font-bold text-indigo-400">
-                                    Subject Name
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={info.name}
-                                    onChange={(e) => {
-                                      const newSubjects = [...customSubjects];
-                                      newSubjects[idx].name = e.target.value;
-                                      setCustomSubjects(newSubjects);
-                                    }}
-                                    className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors"
-                                  />
-                                </div>
-                                <div className="space-y-1.5 w-24 min-w-20">
-                                  <label className="text-xs font-mono font-bold text-indigo-400">
-                                    Credits
-                                  </label>
-                                  <input
-                                    type="number"
-                                    value={info.credits}
-                                    min={0}
-                                    max={10}
-                                    onChange={(e) => {
-                                      const newSubjects = [...customSubjects];
-                                      newSubjects[idx].credits =
-                                        parseInt(e.target.value) || 0;
-                                      setCustomSubjects(newSubjects);
-                                    }}
-                                    className="w-full bg-slate-800 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md md:text-sm px-3 py-2 text-white outline-none transition-colors"
-                                  />
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    const newSubjects = customSubjects.filter(
-                                      (_, i) => i !== idx,
-                                    );
-                                    setCustomSubjects(newSubjects);
-                                  }}
-                                  className="p-2.5 mb-px rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 transition-colors shrink-0"
-                                >
-                                  <Trash2 className="w-5 h-5" />
-                                </button>
-                              </div>
-                            ))
+                            <div className="overflow-x-auto custom-scrollbar">
+                              <table className="w-full text-left min-w-150">
+                                <thead>
+                                  <tr>
+                                    <th className="pb-3 text-xs font-mono font-bold text-indigo-400 w-1/4">
+                                      Code
+                                    </th>
+                                    <th className="pb-3 text-xs font-mono font-bold text-indigo-400">
+                                      Subject Name
+                                    </th>
+                                    <th className="pb-3 text-xs font-mono font-bold text-indigo-400 w-24">
+                                      Credits
+                                    </th>
+                                    <th className="pb-3 w-12"></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {customSubjects.map((info, idx) => (
+                                    <tr
+                                      key={`idx-${idx}`}
+                                      className="group hover:bg-slate-800/20 transition-colors"
+                                    >
+                                      <td className="py-1.5 pr-3">
+                                        <input
+                                          type="text"
+                                          value={info.code}
+                                          onChange={(e) => {
+                                            const newSubjects = [
+                                              ...customSubjects,
+                                            ];
+                                            newSubjects[idx].code =
+                                              e.target.value.toUpperCase();
+                                            setCustomSubjects(newSubjects);
+                                          }}
+                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors uppercase"
+                                        />
+                                      </td>
+                                      <td className="py-1.5 pr-3">
+                                        <input
+                                          type="text"
+                                          value={info.name}
+                                          onChange={(e) => {
+                                            const newSubjects = [
+                                              ...customSubjects,
+                                            ];
+                                            newSubjects[idx].name =
+                                              e.target.value;
+                                            setCustomSubjects(newSubjects);
+                                          }}
+                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors"
+                                        />
+                                      </td>
+                                      <td className="py-1.5 pr-3">
+                                        <input
+                                          type="number"
+                                          value={info.credits}
+                                          min={0}
+                                          max={10}
+                                          onChange={(e) => {
+                                            const newSubjects = [
+                                              ...customSubjects,
+                                            ];
+                                            newSubjects[idx].credits =
+                                              parseInt(e.target.value) || 0;
+                                            setCustomSubjects(newSubjects);
+                                          }}
+                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors"
+                                        />
+                                      </td>
+                                      <td className="py-1.5">
+                                        <button
+                                          onClick={() => {
+                                            const newSubjects =
+                                              customSubjects.filter(
+                                                (_, i) => i !== idx,
+                                              );
+                                            setCustomSubjects(newSubjects);
+                                          }}
+                                          className="p-2 rounded-md hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           )}
 
                           {semester !== "" && (
@@ -845,7 +869,7 @@ export default function ExtractMarks() {
                   {/* AG Grid Container */}
                   <div className="w-full border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark flex flex-col">
                     <AgGridReact
-                      theme={themeQuartz}
+                      theme={themeQuartz.withPart(colorSchemeDark)}
                       rowData={results}
                       columnDefs={colDefs}
                       defaultColDef={defaultColDef}

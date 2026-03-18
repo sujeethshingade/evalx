@@ -33,6 +33,8 @@ import {
 } from "ag-grid-community";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+import { createFormattedExcelWorkbook } from "../../lib/excel";
+
 type SubjectInfo = { code: string; name: string; credits: number };
 
 const KNOWN_SUBJECTS_MAP: Record<string, SubjectInfo[]> = {
@@ -301,33 +303,108 @@ export default function ExtractMarks() {
   const colDefs = useMemo(() => {
     if (!results || results.length === 0) return [];
 
-    const allKeys = Object.keys(results[0]);
-    const priorityPattern = /Name|Internal|External|Total|Result/i;
+    const allKeysSet = new Set<string>();
+    results.forEach((row) =>
+      Object.keys(row).forEach((k) => allKeysSet.add(k)),
+    );
+    const allKeys = Array.from(allKeysSet);
 
-    // Separate name key and score keys
     const nameKey = allKeys.find(
       (k) =>
-        /name|student/i.test(k) && !/internal|external|total|result/i.test(k),
+        /name|student/i.test(k) &&
+        !/internal|external|total|result|usn/i.test(k),
     );
-    const scoreKeys = allKeys.filter(
-      (k) => priorityPattern.test(k) && k !== nameKey,
-    );
+    const usnKey = allKeys.find((k) => /usn|seat/i.test(k));
 
-    // Build column definitions
-    const columns: typeof allKeys = [];
-    if (nameKey) columns.push(nameKey);
-    columns.push(...scoreKeys);
-    columns.push(...allKeys.filter((k) => !columns.includes(k)));
+    const cols: any[] = [];
 
-    return columns.map((key) => ({
-      field: key,
-      headerName: key.replace(/_/g, " "),
-      flex: key === nameKey ? 1.5 : 1,
-      minWidth: key === nameKey ? 200 : 100,
-      filter: false,
-      sortable: true,
-      resizable: true,
-    }));
+    if (usnKey) {
+      cols.push({
+        field: usnKey,
+        headerName: "USN",
+        minWidth: 150,
+        pinned: "left",
+      });
+    }
+    if (nameKey) {
+      cols.push({
+        field: nameKey,
+        headerName: "STUDENT NAMES",
+        minWidth: 200,
+        pinned: "left",
+      });
+    }
+
+    const subjectPrefixes = new Set<string>();
+    const suffixes = [
+      "_Internal",
+      "_External",
+      "_Total",
+      "_Result",
+      "_Credits",
+    ];
+
+    for (const key of allKeys) {
+      for (const suffix of suffixes) {
+        if (key.endsWith(suffix)) {
+          subjectPrefixes.add(key.slice(0, -suffix.length));
+        }
+      }
+    }
+
+    const sortedPrefixes = Array.from(subjectPrefixes).sort();
+
+    for (const prefix of sortedPrefixes) {
+      const children: any[] = [];
+      if (allKeys.includes(`${prefix}_Internal`))
+        children.push({
+          field: `${prefix}_Internal`,
+          headerName: "CIE",
+          minWidth: 80,
+        });
+      if (allKeys.includes(`${prefix}_External`))
+        children.push({
+          field: `${prefix}_External`,
+          headerName: "SEE",
+          minWidth: 80,
+        });
+      if (allKeys.includes(`${prefix}_Total`))
+        children.push({
+          field: `${prefix}_Total`,
+          headerName: "Total",
+          minWidth: 80,
+        });
+      if (allKeys.includes(`${prefix}_Result`))
+        children.push({
+          field: `${prefix}_Result`,
+          headerName: "Result",
+          minWidth: 80,
+        });
+
+      if (children.length > 0) {
+        cols.push({
+          headerName: prefix.replace(/_/g, " "),
+          children,
+        });
+      }
+    }
+
+    const usedKeys = new Set<string>();
+    if (usnKey) usedKeys.add(usnKey);
+    if (nameKey) usedKeys.add(nameKey);
+    for (const prefix of sortedPrefixes) {
+      for (const suffix of suffixes) {
+        usedKeys.add(`${prefix}${suffix}`);
+      }
+    }
+
+    for (const key of allKeys) {
+      if (!usedKeys.has(key)) {
+        cols.push({ field: key, headerName: key.replace(/_/g, " ") });
+      }
+    }
+
+    return cols;
   }, [results]);
 
   const defaultColDef = useMemo(() => {
@@ -338,10 +415,12 @@ export default function ExtractMarks() {
 
   const downloadExcel = () => {
     if (!results || results.length === 0) return;
-    const worksheet = xlsx.utils.json_to_sheet(results);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Student Marks");
-    xlsx.writeFile(workbook, `EvalX_Results_Sem_${semester}.xlsx`);
+    try {
+      const workbook = createFormattedExcelWorkbook(results);
+      xlsx.writeFile(workbook, `EvalX_Results_Sem_${semester}.xlsx`);
+    } catch (err) {
+      console.error("Failed to generate excel", err);
+    }
   };
 
   const handleCopyLink = async () => {

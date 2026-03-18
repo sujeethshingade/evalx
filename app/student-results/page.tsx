@@ -81,9 +81,8 @@ StudentListButton.displayName = "StudentListButton";
 const SavedRunCard = memo<{
   run: SavedRun;
   onView: (runId: string) => void;
-  onDownload: (runId: string, fileName: string) => void;
   onDelete: (runId: string) => void;
-}>(({ run, onView, onDownload, onDelete }) => (
+}>(({ run, onView, onDelete }) => (
   <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
     <div>
       <p className="text-sm font-medium text-white">
@@ -99,12 +98,6 @@ const SavedRunCard = memo<{
         className="inline-flex items-center gap-2 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-300 hover:bg-purple-500/20"
       >
         <FileSpreadsheet className="h-4 w-4" /> View
-      </button>
-      <button
-        onClick={() => onDownload(run._id, run.excelFileName)}
-        className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-500/20"
-      >
-        <Download className="h-4 w-4" /> Download
       </button>
       <button
         onClick={() => onDelete(run._id)}
@@ -260,33 +253,108 @@ export default function StudentResultsPage() {
   const colDefs = useMemo(() => {
     if (!gridData || gridData.length === 0) return [];
 
-    const allKeys = Object.keys(gridData[0]);
-    const priorityPattern = /Name|Internal|External|Total|Result/i;
+    const allKeysSet = new Set<string>();
+    gridData.forEach((row) =>
+      Object.keys(row).forEach((k) => allKeysSet.add(k)),
+    );
+    const allKeys = Array.from(allKeysSet);
 
-    // Separate name key and score keys
     const nameKey = allKeys.find(
       (k) =>
-        /name|student/i.test(k) && !/internal|external|total|result/i.test(k),
+        /name|student/i.test(k) &&
+        !/internal|external|total|result|usn/i.test(k),
     );
-    const scoreKeys = allKeys.filter(
-      (k) => priorityPattern.test(k) && k !== nameKey,
-    );
+    const usnKey = allKeys.find((k) => /usn|seat/i.test(k));
 
-    // Build column definitions
-    const columns: typeof allKeys = [];
-    if (nameKey) columns.push(nameKey);
-    columns.push(...scoreKeys);
-    columns.push(...allKeys.filter((k) => !columns.includes(k)));
+    const cols: any[] = [];
 
-    return columns.map((key) => ({
-      field: key,
-      headerName: key.replace(/_/g, " "),
-      flex: key === nameKey ? 1.5 : 1,
-      minWidth: key === nameKey ? 200 : 100,
-      filter: false,
-      sortable: true,
-      resizable: true,
-    }));
+    if (usnKey) {
+      cols.push({
+        field: usnKey,
+        headerName: "USN",
+        minWidth: 150,
+        pinned: "left",
+      });
+    }
+    if (nameKey) {
+      cols.push({
+        field: nameKey,
+        headerName: "STUDENT NAMES",
+        minWidth: 200,
+        pinned: "left",
+      });
+    }
+
+    const subjectPrefixes = new Set<string>();
+    const suffixes = [
+      "_Internal",
+      "_External",
+      "_Total",
+      "_Result",
+      "_Credits",
+    ];
+
+    for (const key of allKeys) {
+      for (const suffix of suffixes) {
+        if (key.endsWith(suffix)) {
+          subjectPrefixes.add(key.slice(0, -suffix.length));
+        }
+      }
+    }
+
+    const sortedPrefixes = Array.from(subjectPrefixes).sort();
+
+    for (const prefix of sortedPrefixes) {
+      const children: any[] = [];
+      if (allKeys.includes(`${prefix}_Internal`))
+        children.push({
+          field: `${prefix}_Internal`,
+          headerName: "Internal",
+          minWidth: 80,
+        });
+      if (allKeys.includes(`${prefix}_External`))
+        children.push({
+          field: `${prefix}_External`,
+          headerName: "External",
+          minWidth: 80,
+        });
+      if (allKeys.includes(`${prefix}_Total`))
+        children.push({
+          field: `${prefix}_Total`,
+          headerName: "Total",
+          minWidth: 80,
+        });
+      if (allKeys.includes(`${prefix}_Result`))
+        children.push({
+          field: `${prefix}_Result`,
+          headerName: "Result",
+          minWidth: 80,
+        });
+
+      if (children.length > 0) {
+        cols.push({
+          headerName: prefix.replace(/_/g, " "),
+          children,
+        });
+      }
+    }
+
+    const usedKeys = new Set<string>();
+    if (usnKey) usedKeys.add(usnKey);
+    if (nameKey) usedKeys.add(nameKey);
+    for (const prefix of sortedPrefixes) {
+      for (const suffix of suffixes) {
+        usedKeys.add(`${prefix}${suffix}`);
+      }
+    }
+
+    for (const key of allKeys) {
+      if (!usedKeys.has(key)) {
+        cols.push({ field: key, headerName: key.replace(/_/g, " ") });
+      }
+    }
+
+    return cols;
   }, [gridData]);
 
   const defaultColDef = useMemo(
@@ -305,29 +373,6 @@ export default function StudentResultsPage() {
         student.name.toLowerCase().includes(query),
     );
   }, [students, search]);
-
-  const downloadRunExcel = async (runId: string, fileName: string) => {
-    try {
-      setStatus("Downloading excel...");
-      const response = await axios.get(
-        `/api/results/runs/${runId}?format=excel`,
-        {
-          responseType: "blob",
-        },
-      );
-
-      const blobUrl = window.URL.createObjectURL(response.data as Blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      link.click();
-      window.URL.revokeObjectURL(blobUrl);
-      setStatus("Excel downloaded successfully.");
-    } catch (err) {
-      console.error(err);
-      setStatus("Failed to download excel.");
-    }
-  };
 
   const deleteRun = async (runId: string) => {
     try {
@@ -455,7 +500,6 @@ export default function StudentResultsPage() {
                   key={run._id}
                   run={run}
                   onView={openRunInGrid}
-                  onDownload={downloadRunExcel}
                   onDelete={deleteRun}
                 />
               ))}
@@ -512,7 +556,7 @@ export default function StudentResultsPage() {
                 <>
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
-                      <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
+                      <h2 className="text-md md:text-lg lg:text-2xl font-semibold text-white">
                         {studentDetail.name}
                       </h2>
                       <p className="text-xs md:text-sm text-slate-400">

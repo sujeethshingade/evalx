@@ -29,9 +29,9 @@ export async function POST(req: Request) {
     }
 
     // 1. Generate Excel Buffer
-    const worksheet = xlsx.utils.json_to_sheet(results);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Student Marks");
+    const { createFormattedExcelWorkbook } =
+      await import("../../../../lib/excel");
+    const workbook = createFormattedExcelWorkbook(results);
 
     // Write Excel to a Buffer and then convert to Base64 for Resend
     const excelBuffer = xlsx.write(workbook, {

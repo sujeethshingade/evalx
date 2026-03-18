@@ -56,9 +56,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const worksheet = xlsx.utils.json_to_sheet(rawResults);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Student Marks");
+    const { createFormattedExcelWorkbook } =
+      await import("../../../../lib/excel");
+    const workbook = createFormattedExcelWorkbook(rawResults);
+
     const excelData = xlsx.write(workbook, {
       type: "buffer",
       bookType: "xlsx",

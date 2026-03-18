@@ -27,45 +27,67 @@ export async function GET(_req: Request, context: { params: Promise<Params> }) {
     const targetUsn = decodeURIComponent(usn).toUpperCase().trim();
 
     await connectToDatabase();
-    const runs = await SavedResult.find({ userId: authUser.id })
-      .sort({ createdAt: -1 })
-      .select("_id semester createdAt resultsData")
-      .lean();
 
-    const semesterRecords: SemesterStudentRecord[] = [];
-    let studentName = "Unknown";
+    // Use aggregation pipeline to filter on server side
+    const aggregationResult = await SavedResult.aggregate([
+      { $match: { userId: authUser.id } },
+      { $sort: { createdAt: -1 } },
+      { $unwind: { path: "$resultsData", preserveNullAndEmptyArrays: false } },
+      {
+        $addFields: {
+          "resultsData.usn": {
+            $toUpper: {
+              $trim: {
+                input: {
+                  $cond: [
+                    { $isArray: ["$resultsData.usn"] },
+                    { $arrayElemAt: ["$resultsData.usn", 0] },
+                    "$resultsData.usn",
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "resultsData.usn": targetUsn,
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          semester: { $first: "$semester" },
+          createdAt: { $first: "$createdAt" },
+          resultsData: { $first: "$resultsData" },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]).exec();
 
-    for (const run of runs) {
-      const rows = Array.isArray(run.resultsData)
-        ? (run.resultsData as RawResultRow[])
-        : [];
-
-      const matchedRow = rows.find((row) => getStudentUsn(row) === targetUsn);
-      if (!matchedRow) {
-        continue;
-      }
-
-      studentName = getStudentName(matchedRow) || studentName;
-      semesterRecords.push({
-        semester: run.semester,
-        runId: String(run._id),
-        runCreatedAt: new Date(run.createdAt).toISOString(),
-        usn: targetUsn,
-        name: studentName,
-        subjects: parseSubjects(matchedRow),
-      });
-    }
-
-    if (semesterRecords.length === 0) {
+    if (aggregationResult.length === 0) {
       return NextResponse.json(
         { message: "Student not found" },
         { status: 404 },
       );
     }
 
-    semesterRecords.sort((a, b) =>
-      b.runCreatedAt.localeCompare(a.runCreatedAt),
-    );
+    const semesterRecords: SemesterStudentRecord[] = [];
+    let studentName = "Unknown";
+
+    for (const run of aggregationResult) {
+      const row = run.resultsData as RawResultRow;
+      studentName = getStudentName(row) || studentName;
+      semesterRecords.push({
+        semester: run.semester,
+        runId: String(run._id),
+        runCreatedAt: new Date(run.createdAt).toISOString(),
+        usn: targetUsn,
+        name: studentName,
+        subjects: parseSubjects(row),
+      });
+    }
 
     return NextResponse.json(
       {

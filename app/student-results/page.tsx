@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, memo } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -56,6 +56,122 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString();
 }
 
+// Memoized StudentListButton component
+const StudentListButton = memo<{
+  student: StudentListItem;
+  isSelected: boolean;
+  onClick: () => void;
+}>(({ student, isSelected, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`w-full text-left rounded-xl border px-3 py-3 transition-colors ${
+      isSelected
+        ? "border-blue-500 bg-blue-500/10"
+        : "border-slate-800 bg-slate-950 hover:border-slate-700"
+    }`}
+  >
+    <p className="text-sm font-semibold text-white">{student.usn}</p>
+    <p className="text-xs text-slate-400 truncate">{student.name}</p>
+  </button>
+));
+
+StudentListButton.displayName = "StudentListButton";
+
+// Memoized SavedRunCard component
+const SavedRunCard = memo<{
+  run: SavedRun;
+  onView: (runId: string) => void;
+  onDownload: (runId: string, fileName: string) => void;
+  onDelete: (runId: string) => void;
+}>(({ run, onView, onDownload, onDelete }) => (
+  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div>
+      <p className="text-sm font-medium text-white">
+        Semester {run.semester} | {run.totalStudents} students
+      </p>
+      <p className="text-xs text-slate-500">
+        Uploaded: {formatDate(run.createdAt)}
+      </p>
+    </div>
+    <div className="flex items-center gap-2 flex-wrap">
+      <button
+        onClick={() => onView(run._id)}
+        className="inline-flex items-center gap-2 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-300 hover:bg-purple-500/20"
+      >
+        <FileSpreadsheet className="h-4 w-4" /> View
+      </button>
+      <button
+        onClick={() => onDownload(run._id, run.excelFileName)}
+        className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-500/20"
+      >
+        <Download className="h-4 w-4" /> Download
+      </button>
+      <button
+        onClick={() => onDelete(run._id)}
+        className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300 hover:bg-red-500/20"
+      >
+        <Trash2 className="h-4 w-4" /> Delete
+      </button>
+    </div>
+  </div>
+));
+
+SavedRunCard.displayName = "SavedRunCard";
+
+// Memoized SemesterCard component
+const SemesterCard = memo<{
+  semester: StudentDetail["semesters"][0];
+}>(({ semester }) => (
+  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+    <h3 className="text-sm font-semibold text-white mb-3">
+      Semester {semester.semester}
+    </h3>
+    <p className="text-xs text-slate-500 mb-3">
+      Processed on {formatDate(semester.runCreatedAt)}
+    </p>
+
+    <div className="mt-3 overflow-x-auto">
+      <table className="min-w-full text-xs">
+        <thead className="text-slate-400">
+          <tr>
+            <th className="text-left py-2 pr-3">Code</th>
+            <th className="text-left py-2 pr-3">Subject</th>
+            <th className="text-left py-2 pr-3">Internal</th>
+            <th className="text-left py-2 pr-3">External</th>
+            <th className="text-left py-2 pr-3">Total</th>
+            <th className="text-left py-2 pr-3">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {semester.subjects.map((subject, index) => (
+            <tr
+              key={`${subject.code}-${index}`}
+              className="border-t border-slate-800/70"
+            >
+              <td className="py-2 pr-3 text-slate-300">{subject.code}</td>
+              <td className="py-2 pr-3 text-slate-300">{subject.name}</td>
+              <td className="py-2 pr-3 text-slate-300">
+                {subject.internal ?? "-"}
+              </td>
+              <td className="py-2 pr-3 text-slate-300">
+                {subject.external ?? "-"}
+              </td>
+              <td className="py-2 pr-3 text-slate-300">
+                {subject.total ?? "-"}
+              </td>
+              <td className="py-2 pr-3 text-slate-300">
+                {subject.result ?? "-"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+));
+
+SemesterCard.displayName = "SemesterCard";
+
 export default function StudentResultsPage() {
   const [students, setStudents] = useState<StudentListItem[]>([]);
   const [selectedUsn, setSelectedUsn] = useState("");
@@ -71,6 +187,8 @@ export default function StudentResultsPage() {
     null,
   );
   const [loadingGrid, setLoadingGrid] = useState(false);
+  // Cache for student details to prevent redundant API calls
+  const [detailsCache] = useState<Map<string, StudentDetail>>(new Map());
 
   useEffect(() => {
     if (status) {
@@ -115,11 +233,19 @@ export default function StudentResultsPage() {
 
     const fetchDetail = async () => {
       try {
+        // Check cache first
+        if (detailsCache.has(selectedUsn)) {
+          setStudentDetail(detailsCache.get(selectedUsn) || null);
+          return;
+        }
+
         setLoadingDetail(true);
         const response = await axios.get<{ student: StudentDetail }>(
           `/api/results/students/${encodeURIComponent(selectedUsn)}`,
         );
-        setStudentDetail(response.data.student);
+        const detail = response.data.student;
+        detailsCache.set(selectedUsn, detail);
+        setStudentDetail(detail);
       } catch (err) {
         console.error(err);
         setStudentDetail(null);
@@ -129,7 +255,7 @@ export default function StudentResultsPage() {
     };
 
     void fetchDetail();
-  }, [selectedUsn]);
+  }, [selectedUsn, detailsCache]);
 
   const colDefs = useMemo(() => {
     if (!gridData || gridData.length === 0) return [];
@@ -325,41 +451,13 @@ export default function StudentResultsPage() {
                   new Date(a.createdAt).getTime(),
               )
               .map((run) => (
-                <div
+                <SavedRunCard
                   key={run._id}
-                  className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white">
-                      Semester {run.semester} | {run.totalStudents} students
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Uploaded: {formatDate(run.createdAt)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => openRunInGrid(run._id)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-300 hover:bg-purple-500/20"
-                    >
-                      <FileSpreadsheet className="h-4 w-4" /> View
-                    </button>
-                    <button
-                      onClick={() =>
-                        downloadRunExcel(run._id, run.excelFileName)
-                      }
-                      className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-500/20"
-                    >
-                      <Download className="h-4 w-4" /> Download
-                    </button>
-                    <button
-                      onClick={() => deleteRun(run._id)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300 hover:bg-red-500/20"
-                    >
-                      <Trash2 className="h-4 w-4" /> Delete
-                    </button>
-                  </div>
-                </div>
+                  run={run}
+                  onView={openRunInGrid}
+                  onDownload={downloadRunExcel}
+                  onDelete={deleteRun}
+                />
               ))}
             {runs.length === 0 ? (
               <p className="text-sm text-slate-500">
@@ -385,22 +483,12 @@ export default function StudentResultsPage() {
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {filteredStudents.map((student) => (
-                  <button
+                  <StudentListButton
                     key={student.usn}
+                    student={student}
+                    isSelected={selectedUsn === student.usn}
                     onClick={() => setSelectedUsn(student.usn)}
-                    className={`w-full text-left rounded-xl border px-3 py-3 transition-colors ${
-                      selectedUsn === student.usn
-                        ? "border-blue-500 bg-blue-500/10"
-                        : "border-slate-800 bg-slate-950 hover:border-slate-700"
-                    }`}
-                  >
-                    <p className="text-sm font-semibold text-white">
-                      {student.usn}
-                    </p>
-                    <p className="text-xs text-slate-400 truncate">
-                      {student.name}
-                    </p>
-                  </button>
+                  />
                 ))}
                 {filteredStudents.length === 0 ? (
                   <p className="text-sm text-slate-500">
@@ -453,67 +541,10 @@ export default function StudentResultsPage() {
                         return numA - numB;
                       })
                       .map((sem) => (
-                        <div
+                        <SemesterCard
                           key={`${sem.runId}-${sem.semester}`}
-                          className="rounded-xl border border-slate-800 bg-slate-950 p-3"
-                        >
-                          <h3 className="text-sm font-semibold text-white mb-3">
-                            Semester {sem.semester}
-                          </h3>
-                          <p className="text-xs text-slate-500 mb-3">
-                            Processed on {formatDate(sem.runCreatedAt)}
-                          </p>
-
-                          <div className="mt-3 overflow-x-auto">
-                            <table className="min-w-full text-xs">
-                              <thead className="text-slate-400">
-                                <tr>
-                                  <th className="text-left py-2 pr-3">Code</th>
-                                  <th className="text-left py-2 pr-3">
-                                    Subject
-                                  </th>
-                                  <th className="text-left py-2 pr-3">
-                                    Internal
-                                  </th>
-                                  <th className="text-left py-2 pr-3">
-                                    External
-                                  </th>
-                                  <th className="text-left py-2 pr-3">Total</th>
-                                  <th className="text-left py-2 pr-3">
-                                    Result
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {sem.subjects.map((subject, index) => (
-                                  <tr
-                                    key={`${subject.code}-${index}`}
-                                    className="border-t border-slate-800/70"
-                                  >
-                                    <td className="py-2 pr-3 text-slate-300">
-                                      {subject.code}
-                                    </td>
-                                    <td className="py-2 pr-3 text-slate-300">
-                                      {subject.name}
-                                    </td>
-                                    <td className="py-2 pr-3 text-slate-300">
-                                      {subject.internal ?? "-"}
-                                    </td>
-                                    <td className="py-2 pr-3 text-slate-300">
-                                      {subject.external ?? "-"}
-                                    </td>
-                                    <td className="py-2 pr-3 text-slate-300">
-                                      {subject.total ?? "-"}
-                                    </td>
-                                    <td className="py-2 pr-3 text-slate-300">
-                                      {subject.result ?? "-"}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
+                          semester={sem}
+                        />
                       ))}
                   </div>
                 </>

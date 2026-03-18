@@ -23,62 +23,29 @@ export async function GET() {
     }
 
     await connectToDatabase();
-    const runs = await SavedResult.find({ userId: authUser.id })
-      .sort({ createdAt: -1 })
-      .select("_id semester createdAt resultsData")
-      .lean();
 
-    const byUsn = new Map<
-      string,
+    // Use aggregation pipeline to extract students server-side (faster)
+    const results = await SavedResult.aggregate([
+      { $match: { userId: authUser.id } },
+      { $sort: { createdAt: -1 } },
+      { $unwind: "$resultsData" },
       {
-        name: string;
-        latestRunAt: string;
-      }
-    >();
+        $group: {
+          _id: { $toUpper: "$resultsData.USN" },
+          name: { $first: "$resultsData.Name" },
+          latestRunAt: { $first: "$createdAt" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
 
-    for (const run of runs) {
-      const rows = Array.isArray(run.resultsData)
-        ? (run.resultsData as RawResultRow[])
-        : [];
-
-      for (const row of rows) {
-        const usn = getStudentUsn(row);
-        if (!usn) {
-          continue;
-        }
-
-        const name = getStudentName(row);
-        const runCreatedAt = new Date(run.createdAt).toISOString();
-
-        if (!byUsn.has(usn)) {
-          byUsn.set(usn, {
-            name,
-            latestRunAt: runCreatedAt,
-          });
-          continue;
-        }
-
-        const existing = byUsn.get(usn);
-        if (!existing) {
-          continue;
-        }
-
-        if (runCreatedAt > existing.latestRunAt) {
-          existing.latestRunAt = runCreatedAt;
-          existing.name = name || existing.name;
-        }
-      }
-    }
-
-    const students: StudentListItem[] = [...byUsn.entries()].map(
-      ([usn, data]) => ({
-        usn,
-        name: data.name,
-        latestRunAt: data.latestRunAt,
-      }),
-    );
-
-    students.sort((a, b) => a.usn.localeCompare(b.usn));
+    const students: StudentListItem[] = results
+      .filter((r) => r._id && r._id !== "NOT_FOUND")
+      .map((r) => ({
+        usn: r._id,
+        name: r.name || "Unknown",
+        latestRunAt: new Date(r.latestRunAt).toISOString(),
+      }));
 
     return NextResponse.json({ students }, { status: 200 });
   } catch (error) {
@@ -89,3 +56,5 @@ export async function GET() {
     );
   }
 }
+
+export const dynamic = "force-dynamic";

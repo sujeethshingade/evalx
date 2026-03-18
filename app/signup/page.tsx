@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -16,6 +16,97 @@ import {
 import axios from "axios";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+
+// Memoized email input component
+const EmailInput = memo<{
+  value: string;
+  onChange: (val: string) => void;
+  disabled?: boolean;
+}>(({ value, onChange, disabled = false }) => (
+  <div>
+    <label className="block text-sm font-medium text-slate-300 mb-2 ml-1">
+      Email Address
+    </label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <Mail className="h-5 w-5 text-slate-500" />
+      </div>
+      <input
+        type="email"
+        required
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-white transition-all placeholder:text-slate-600 disabled:opacity-50"
+        placeholder="you@university.edu"
+      />
+    </div>
+  </div>
+));
+
+EmailInput.displayName = "EmailInput";
+
+// Memoized password input component
+const PasswordInput = memo<{
+  value: string;
+  onChange: (val: string) => void;
+  label?: string;
+  disabled?: boolean;
+}>(({ value, onChange, label = "Password", disabled = false }) => (
+  <div>
+    <label className="block text-sm font-medium text-slate-300 mb-2 ml-1">
+      {label}
+    </label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <Lock className="h-5 w-5 text-slate-500" />
+      </div>
+      <input
+        type="password"
+        required
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-white transition-all placeholder:text-slate-600 disabled:opacity-50"
+        placeholder={
+          label === "Password" ? "At least 8 characters" : "Confirm password"
+        }
+      />
+    </div>
+  </div>
+));
+
+PasswordInput.displayName = "PasswordInput";
+
+// Memoized OTP input component
+const OTPInput = memo<{
+  value: string;
+  onChange: (val: string) => void;
+  disabled?: boolean;
+}>(({ value, onChange, disabled = false }) => (
+  <div>
+    <label className="block text-sm font-medium text-slate-300 mb-2 ml-1">
+      Authentication Code
+    </label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <KeyRound className="h-5 w-5 text-slate-500" />
+      </div>
+      <input
+        type="text"
+        required
+        disabled={disabled}
+        maxLength={6}
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+        className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-white transition-all placeholder:text-slate-600 tracking-[0.5em] font-mono text-center disabled:opacity-50"
+        placeholder="000000"
+      />
+    </div>
+  </div>
+));
+
+OTPInput.displayName = "OTPInput";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -109,62 +200,25 @@ export default function SignupPage() {
 
               {step === "signup" ? (
                 <form onSubmit={handleSignup} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2 ml-1">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-slate-500" />
-                      </div>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-white transition-all placeholder:text-slate-600"
-                        placeholder="you@university.edu"
-                      />
-                    </div>
-                  </div>
+                  <EmailInput
+                    value={email}
+                    onChange={setEmail}
+                    disabled={loading}
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2 ml-1">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="h-5 w-5 text-slate-500" />
-                      </div>
-                      <input
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-white transition-all placeholder:text-slate-600"
-                        placeholder="At least 8 characters"
-                      />
-                    </div>
-                  </div>
+                  <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    label="Password"
+                    disabled={loading}
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2 ml-1">
-                      Confirm Password
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="h-5 w-5 text-slate-500" />
-                      </div>
-                      <input
-                        type="password"
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-white transition-all placeholder:text-slate-600"
-                        placeholder="Repeat your password"
-                      />
-                    </div>
-                  </div>
+                  <PasswordInput
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    label="Confirm Password"
+                    disabled={loading}
+                  />
 
                   {error && (
                     <p className="text-sm text-red-400 font-medium text-center">
@@ -205,27 +259,7 @@ export default function SignupPage() {
                     <CheckCircle className="w-4 h-4" /> {successMsg}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2 ml-1">
-                      Verification OTP
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <KeyRound className="h-5 w-5 text-slate-500" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        maxLength={6}
-                        value={otp}
-                        onChange={(e) =>
-                          setOtp(e.target.value.replace(/\D/g, ""))
-                        }
-                        className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-white transition-all placeholder:text-slate-600 tracking-[0.5em] font-mono text-center"
-                        placeholder="000000"
-                      />
-                    </div>
-                  </div>
+                  <OTPInput value={otp} onChange={setOtp} disabled={loading} />
 
                   {error && (
                     <p className="text-sm text-red-400 font-medium text-center">

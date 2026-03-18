@@ -4,13 +4,15 @@ import { cookies } from "next/headers";
 import connectToDatabase from "../../../../lib/mongodb";
 import User from "../../../../models/User";
 import { signJwt } from "../../../../lib/auth";
-import { Resend } from "resend";
-import { getEmailFromAddress, otpTemplate } from "../../../../lib/email";
-
-const resend = new Resend(process.env.RESEND_API_KEY!);
+import {
+  getEmailFromAddress,
+  getResendClient,
+  otpTemplate,
+} from "../../../../lib/email";
 
 export async function POST(req: Request) {
   try {
+    const resend = getResendClient();
     const { email, password } = await req.json();
 
     if (!email || !password) {
@@ -41,6 +43,16 @@ export async function POST(req: Request) {
     }
 
     if (!user.isVerified) {
+      if (!resend) {
+        return NextResponse.json(
+          {
+            message:
+              "Email service is not configured. Set RESEND_API_KEY in deployment environment variables.",
+          },
+          { status: 503 },
+        );
+      }
+
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       user.otp = otp;
       user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);

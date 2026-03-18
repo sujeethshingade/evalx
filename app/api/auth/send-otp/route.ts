@@ -1,17 +1,31 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "../../../../lib/mongodb";
 import User from "../../../../models/User";
-import { Resend } from "resend";
-import { getEmailFromAddress, otpTemplate } from "../../../../lib/email";
-
-const resend = new Resend(process.env.RESEND_API_KEY!);
+import {
+  getEmailFromAddress,
+  getResendClient,
+  otpTemplate,
+} from "../../../../lib/email";
 
 export async function POST(req: Request) {
   try {
+    const resend = getResendClient();
+    if (!resend) {
+      return NextResponse.json(
+        {
+          message:
+            "Email service is not configured. Set RESEND_API_KEY in deployment environment variables.",
+        },
+        { status: 503 },
+      );
+    }
+
     const body = await req.json();
     const { email } = body;
+    const normalizedEmail =
+      typeof email === "string" ? email.toLowerCase().trim() : "";
 
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    if (!normalizedEmail || !/\S+@\S+\.\S+/.test(normalizedEmail)) {
       return NextResponse.json(
         { message: "Invalid email address" },
         { status: 400 },
@@ -24,7 +38,7 @@ export async function POST(req: Request) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return NextResponse.json(
@@ -46,7 +60,7 @@ export async function POST(req: Request) {
 
     const { error } = await resend.emails.send({
       from: getEmailFromAddress(),
-      to: email,
+      to: normalizedEmail,
       subject: "Verify your EvalX account",
       html: otpTemplate(otp),
     });

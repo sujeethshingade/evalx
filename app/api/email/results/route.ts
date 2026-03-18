@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import * as xlsx from "xlsx";
-import { getEmailFromAddress, resultsTemplate } from "../../../../lib/email";
-
-const resend = new Resend(process.env.RESEND_API_KEY!);
+import {
+  getEmailFromAddress,
+  getResendClient,
+  resultsTemplate,
+} from "../../../../lib/email";
 
 export async function POST(req: Request) {
   try {
+    const resend = getResendClient();
+    if (!resend) {
+      return NextResponse.json(
+        {
+          message:
+            "Email service is not configured. Set RESEND_API_KEY in deployment environment variables.",
+        },
+        { status: 503 },
+      );
+    }
+
     const { emailRecipient, results, semester } = await req.json();
 
     if (!emailRecipient || !results || results.length === 0) {

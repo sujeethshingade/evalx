@@ -7,7 +7,7 @@ type Params = {
   id: string;
 };
 
-export async function GET(_req: Request, context: { params: Promise<Params> }) {
+export async function GET(req: Request, context: { params: Promise<Params> }) {
   try {
     const authUser = await getAuthenticatedUser();
     if (!authUser) {
@@ -15,17 +15,38 @@ export async function GET(_req: Request, context: { params: Promise<Params> }) {
     }
 
     const { id } = await context.params;
+    const url = new URL(req.url);
+    const isExcelDownload = url.searchParams.get("format") === "excel";
+
     await connectToDatabase();
 
     const run = await SavedResult.findOne({
       _id: id,
       userId: authUser.id,
     })
-      .select("_id semester totalStudents resultsData createdAt")
+      .select(
+        isExcelDownload
+          ? "_id semester excelData excelFileName"
+          : "_id semester totalStudents resultsData createdAt",
+      )
       .lean();
 
     if (!run) {
       return NextResponse.json({ message: "Not found" }, { status: 404 });
+    }
+
+    if (isExcelDownload && run.excelData) {
+      const bytes = Buffer.isBuffer(run.excelData)
+        ? new Uint8Array(run.excelData)
+        : new Uint8Array(Buffer.from(run.excelData));
+
+      return new NextResponse(bytes, {
+        headers: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="${run.excelFileName}"`,
+        },
+      });
     }
 
     return NextResponse.json({ data: run.resultsData || [] }, { status: 200 });

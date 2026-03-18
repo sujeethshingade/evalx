@@ -3,7 +3,7 @@ import * as xlsx from "xlsx";
 import connectToDatabase from "../../../../lib/mongodb";
 import { getAuthenticatedUser } from "../../../../lib/server-auth";
 import SavedResult from "../../../../models/SavedResult";
-import { getScore, isPassing, RawResultRow } from "../../../../lib/results";
+import type { RawResultRow } from "../../../../lib/results";
 
 function sanitizeSemester(semester: unknown): string {
   if (typeof semester !== "string") {

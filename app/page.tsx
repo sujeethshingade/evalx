@@ -80,7 +80,7 @@ export default function Home() {
                 href="/student-results"
                 className="px-8 py-4 w-full sm:w-auto bg-slate-900/50 hover:bg-slate-800 backdrop-blur-md text-white font-semibold rounded-2xl transition-all border border-slate-700 hover:border-slate-600 active:scale-95 flex items-center justify-center gap-2"
               >
-                <User className="w-5 h-5 text-indigo-400" />
+                <User className="w-5 h-5 text-blue-400" />
                 View Results
               </Link>
             </motion.div>

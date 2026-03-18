@@ -371,9 +371,9 @@ export default function ExtractMarks() {
     <div className="flex flex-col min-h-screen bg-slate-950 text-slate-200">
       <Header />
 
-      <main className="grow p-4 md:p-8 relative overflow-hidden flex flex-col items-center">
+      <main className="grow p-4 md:p-8 relative overflow-hidden flex flex-col items-center max-h-[calc(100vh-7.5rem)]">
         {/* Step Indicator */}
-        <div className="w-full max-w-xl mb-12 mt-4">
+        <div className="w-full max-w-xl mb-12 mt-4 shrink-0">
           <div className="flex items-center justify-between relative">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-800 -z-10 rounded-full" />
             <div
@@ -412,7 +412,7 @@ export default function ExtractMarks() {
           </div>
         </div>
 
-        <div className="max-w-6xl relative z-10 w-full">
+        <div className="max-w-6xl relative z-10 w-full overflow-y-auto px-2 flex-1">
           <AnimatePresence mode="wait">
             {/* STEP 1: UPLOAD */}
             {step === 1 && (
@@ -421,13 +421,13 @@ export default function ExtractMarks() {
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
-                className="space-y-6"
+                className="space-y-6 pb-8"
               >
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white/90 mb-2">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white/90 mb-2">
                     Upload Result PDFs
                   </h2>
-                  <p className="text-slate-400">
+                  <p className="text-xs md:text-sm text-slate-400">
                     Select or drop your PDF files here to begin extraction.
                   </p>
                 </div>
@@ -520,13 +520,13 @@ export default function ExtractMarks() {
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
-                className="space-y-6 max-w-6xl mx-auto"
+                className="space-y-6 max-w-6xl mx-auto pb-8"
               >
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
                     Configure Extraction
                   </h2>
-                  <p className="text-slate-400">
+                  <p className="text-xs md:text-sm text-slate-400">
                     Select semester and verify subjects to map the data
                     correctly.
                   </p>
@@ -708,7 +708,7 @@ export default function ExtractMarks() {
                 key="step3"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center justify-center py-20"
+                className="flex flex-col items-center justify-center py-20 pb-8"
               >
                 <div className="w-24 h-24 relative mb-12">
                   <div className="absolute inset-0 border-4 border-slate-800 rounded-full" />
@@ -718,10 +718,10 @@ export default function ExtractMarks() {
                   </div>
                 </div>
 
-                <h2 className="text-3xl font-bold text-white mb-3">
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
                   Extracting Data
                 </h2>
-                <p className="text-slate-400 mb-8 max-w-sm text-center">
+                <p className="text-xs md:text-sm text-slate-400 mb-8 max-w-sm text-center">
                   Parsing {files.length} PDFs.
                 </p>
 
@@ -756,15 +756,16 @@ export default function ExtractMarks() {
                 key="step4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6 w-full"
+                className="space-y-6 w-full pb-8"
               >
                 <div className="glass-card rounded-2xl p-6 md:p-8">
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
                     <div>
-                      <h2 className="text-2xl font-bold text-emerald-400 flex items-center gap-2 mb-1">
-                        <CheckCircle className="w-6 h-6" /> Extraction Complete
+                      <h2 className="text-xl md:text-2xl font-bold text-emerald-400 flex items-center gap-2 mb-1">
+                        <CheckCircle className="w-5 h-5 md:w-6 md:h-6" />{" "}
+                        Extraction Complete
                       </h2>
-                      <p className="text-slate-400">
+                      <p className="text-xs md:text-sm text-slate-400">
                         Found data for{" "}
                         <span className="text-white font-bold">
                           {results.length}
@@ -772,16 +773,16 @@ export default function ExtractMarks() {
                         students across {files.length} files.
                       </p>
                       {saveStatus ? (
-                        <p className="text-sm text-blue-300 mt-1">
+                        <p className="text-xs md:text-sm text-blue-300 mt-1">
                           {saveStatus}
                         </p>
                       ) : null}
                     </div>
 
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
                       {copyStatus && (
                         <p
-                          className={`text-sm text-center font-medium ${
+                          className={`text-xs md:text-sm text-center font-medium ${
                             copyStatus.startsWith("Copied")
                               ? "text-emerald-400"
                               : "text-red-400"
@@ -790,30 +791,32 @@ export default function ExtractMarks() {
                           {copyStatus}
                         </p>
                       )}
-                      <div className="flex gap-3">
+                      <div className="flex flex-col md:flex-row gap-2">
                         <button
                           onClick={handleCopyLink}
                           disabled={isUploading}
-                          className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium rounded-xl transition-all border border-slate-700 flex items-center gap-2"
+                          className="w-full md:w-auto px-4 md:px-6 py-2 md:py-2.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-500 text-white text-sm md:text-base font-medium rounded-xl transition-all border border-slate-700 flex items-center justify-center md:justify-start gap-2"
                         >
                           {isUploading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
                           ) : (
-                            <Copy className="w-5 h-5" />
+                            <Copy className="w-4 h-4 md:w-5 md:h-5" />
                           )}
                           {isUploading ? "Uploading..." : "Copy link"}
                         </button>
                         <button
                           onClick={() => setShowEmailModal(true)}
-                          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
+                          className="w-full md:w-auto px-4 md:px-6 py-2 md:py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm md:text-base font-medium rounded-xl transition-all shadow-lg flex items-center justify-center md:justify-start gap-2"
                         >
-                          <Mail className="w-5 h-5" /> Email Results
+                          <Mail className="w-4 h-4 md:w-5 md:h-5" /> Email
+                          Results
                         </button>
                         <button
                           onClick={downloadExcel}
-                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl transition-all shadow-lg flex items-center gap-2"
+                          className="w-full md:w-auto px-4 md:px-6 py-2 md:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm md:text-base font-medium rounded-xl transition-all shadow-lg flex items-center justify-center md:justify-start gap-2"
                         >
-                          <Download className="w-5 h-5" /> Download Excel
+                          <Download className="w-4 h-4 md:w-5 md:h-5" />{" "}
+                          Download Excel
                         </button>
                       </div>
                     </div>

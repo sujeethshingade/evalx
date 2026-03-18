@@ -149,9 +149,12 @@ export default function StudentResultsPage() {
   const downloadRunExcel = async (runId: string, fileName: string) => {
     try {
       setStatus("Downloading excel...");
-      const response = await axios.get(`/api/results/runs/${runId}/excel`, {
-        responseType: "blob",
-      });
+      const response = await axios.get(
+        `/api/results/runs/${runId}?format=excel`,
+        {
+          responseType: "blob",
+        },
+      );
 
       const blobUrl = window.URL.createObjectURL(response.data as Blob);
       const link = document.createElement("a");
@@ -194,6 +197,28 @@ export default function StudentResultsPage() {
 
   const downloadStudentPdf = () => {
     if (!studentDetail) return;
+
+    // Check for images in PDF - warn user if found
+    const hasImages = studentDetail.semesters.some((sem) =>
+      sem.subjects.some((subject) => {
+        // Check if any subject data appears to contain image indicators
+        const dataStr = JSON.stringify(subject);
+        return dataStr.toLowerCase().includes("image") ||
+          dataStr.toLowerCase().includes("png") ||
+          dataStr.toLowerCase().includes("jpg") ||
+          dataStr.toLowerCase().includes("jpeg") ||
+          dataStr.toLowerCase().includes("gif")
+          ? true
+          : false;
+      }),
+    );
+
+    if (hasImages) {
+      const proceed = false; // Show warning - this would typically be an alert
+      console.warn(
+        "Warning: This PDF contains image data. EvalX can only process text-based data. Some information may not have been extracted correctly.",
+      );
+    }
 
     const doc = new jsPDF();
     doc.setFontSize(16);
@@ -241,7 +266,6 @@ export default function StudentResultsPage() {
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col">
       <Header />
       <main className="grow p-4 md:p-8 space-y-6">
-
         {status ? (
           <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
             {status}
@@ -249,9 +273,7 @@ export default function StudentResultsPage() {
         ) : null}
 
         <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-          <h2 className="text-lg font-semibold text-white mb-3">
-            Saved Excel
-          </h2>
+          <h2 className="text-lg font-semibold text-white mb-3">Saved Excel</h2>
           <div className="space-y-2">
             {runs.map((run) => (
               <div
@@ -301,8 +323,8 @@ export default function StudentResultsPage() {
             <Loader2 className="h-4 w-4 animate-spin" /> Loading records...
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-            <section className="xl:col-span-1 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <section className="md:col-span-1 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -337,7 +359,7 @@ export default function StudentResultsPage() {
               </div>
             </section>
 
-            <section className="xl:col-span-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-4">
+            <section className="md:col-span-2 lg:col-span-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-4">
               {loadingDetail ? (
                 <div className="text-sm text-slate-400 flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" /> Loading student
@@ -351,16 +373,16 @@ export default function StudentResultsPage() {
                 <>
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
-                      <h2 className="text-xl font-semibold text-white">
+                      <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
                         {studentDetail.name}
                       </h2>
-                      <p className="text-sm text-slate-400">
+                      <p className="text-xs md:text-sm text-slate-400">
                         {studentDetail.usn}
                       </p>
                     </div>
                     <button
                       onClick={downloadStudentPdf}
-                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-medium text-white"
+                      className="w-full md:w-auto inline-flex items-center justify-center md:justify-start gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs md:text-sm font-medium text-white"
                     >
                       <Download className="h-4 w-4" /> Download Report Card
                     </button>
@@ -379,46 +401,54 @@ export default function StudentResultsPage() {
                           Processed on {formatDate(sem.runCreatedAt)}
                         </p>
 
-                        <div className="mt-3 overflow-x-auto">
-                          <table className="min-w-full text-xs">
-                            <thead className="text-slate-400">
-                              <tr>
-                                <th className="text-left py-2 pr-3">Code</th>
-                                <th className="text-left py-2 pr-3">Subject</th>
-                                <th className="text-left py-2 pr-3">Int</th>
-                                <th className="text-left py-2 pr-3">Ext</th>
-                                <th className="text-left py-2 pr-3">Total</th>
-                                <th className="text-left py-2 pr-3">Result</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sem.subjects.map((subject, index) => (
-                                <tr
-                                  key={`${subject.code}-${index}`}
-                                  className="border-t border-slate-800/70"
-                                >
-                                  <td className="py-2 pr-3 text-slate-300">
-                                    {subject.code}
-                                  </td>
-                                  <td className="py-2 pr-3 text-slate-300">
-                                    {subject.name}
-                                  </td>
-                                  <td className="py-2 pr-3 text-slate-300">
-                                    {subject.internal ?? "-"}
-                                  </td>
-                                  <td className="py-2 pr-3 text-slate-300">
-                                    {subject.external ?? "-"}
-                                  </td>
-                                  <td className="py-2 pr-3 text-slate-300">
-                                    {subject.total ?? "-"}
-                                  </td>
-                                  <td className="py-2 pr-3 text-slate-300">
-                                    {subject.result ?? "-"}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                        <div className="bg-slate-900 rounded-lg overflow-hidden">
+                          <AgGridReact
+                            columnDefs={[
+                              { field: "code", headerName: "Code", flex: 1 },
+                              {
+                                field: "name",
+                                headerName: "Subject",
+                                flex: 2,
+                              },
+                              {
+                                field: "internal",
+                                headerName: "Int",
+                                flex: 0.8,
+                              },
+                              {
+                                field: "external",
+                                headerName: "Ext",
+                                flex: 0.8,
+                              },
+                              { field: "total", headerName: "Tot", flex: 0.8 },
+                              {
+                                field: "result",
+                                headerName: "Res",
+                                flex: 0.8,
+                              },
+                            ]}
+                            rowData={sem.subjects.map((s) => ({
+                              code: s.code,
+                              name: s.name,
+                              internal: s.internal ?? "-",
+                              external: s.external ?? "-",
+                              total: s.total ?? "-",
+                              result: s.result ?? "-",
+                            }))}
+                            defaultColDef={{
+                              sortable: true,
+                              resizable: true,
+                              filter: false,
+                              cellStyle: {
+                                color: "#cbd5e1",
+                                fontSize: "12px",
+                              },
+                            }}
+                            containerStyle={{
+                              height: "200px",
+                              width: "100%",
+                            }}
+                          />
                         </div>
                       </div>
                     ))}

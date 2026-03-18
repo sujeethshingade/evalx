@@ -28,7 +28,7 @@ export default function Home() {
         <div className="absolute top-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full mix-blend-screen" />
           <div className="absolute top-[20%] right-[-10%] w-[30%] h-[50%] bg-emerald-600/10 blur-[120px] rounded-full mix-blend-screen" />
-          <div className="absolute bottom-[-20%] left-[20%] w-[50%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full mix-blend-screen" />
+          <div className="absolute bottom-[-20%] left-[20%] w-[50%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full mix-blend-screen" />
         </div>
 
         {/* Hero Section */}
@@ -51,7 +51,7 @@ export default function Home() {
 
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-white mb-8 leading-[1.1]">
               Effortless Data <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400 via-indigo-400 to-emerald-400">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400 via-blue-400 to-emerald-400">
                 Extraction at Scale
               </span>
             </h1>
@@ -121,7 +121,9 @@ export default function Home() {
                   onHoverStart={() =>
                     setPingingCards((prev) => ({ ...prev, [idx]: true }))
                   }
-                  className={"bg-slate-950/50 border border-slate-800 p-8 rounded-4xl transition-colors group"}
+                  className={
+                    "bg-slate-950/50 border border-slate-800 p-8 rounded-4xl transition-colors group"
+                  }
                 >
                   <div className="w-14 h-14 bg-slate-900 border border-slate-700/50 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform duration-300">
                     {feature.icon}
@@ -146,7 +148,9 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
             onHoverStart={() => setStatsPinged(true)}
-            className={"max-w-6xl mx-auto rounded-4xl p-12 md:p-16 relative overflow-hidden border border-slate-800 shadow-2xl"}
+            className={
+              "max-w-6xl mx-auto rounded-4xl p-12 md:p-16 relative overflow-hidden border border-slate-800 shadow-2xl"
+            }
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 text-center items-center">
               <motion.div

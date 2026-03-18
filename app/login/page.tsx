@@ -188,7 +188,7 @@ function LoginContent() {
           >
             {/* Background Flair */}
             <div className="absolute -top-32 -right-32 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl z-0 pointer-events-none" />
-            <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl z-0 pointer-events-none" />
+            <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl z-0 pointer-events-none" />
 
             <div className="relative z-10">
               <div className="text-center mb-10">

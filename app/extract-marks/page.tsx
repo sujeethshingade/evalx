@@ -557,7 +557,7 @@ export default function ExtractMarks() {
 
                 <div className="glass-card rounded-2xl p-8">
                   <h3 className="text-xl font-medium mb-6 flex items-center gap-2">
-                    <Layers className="w-6 h-6 text-indigo-400" /> Semester
+                    <Layers className="w-6 h-6 text-blue-400" /> Semester
                     Details
                   </h3>
 
@@ -569,7 +569,7 @@ export default function ExtractMarks() {
                       <select
                         value={semester}
                         onChange={handleSemesterChange}
-                        className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-shadow appearance-none"
+                        className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow appearance-none"
                       >
                         <option value="" disabled>
                           Select a Semester
@@ -590,7 +590,7 @@ export default function ExtractMarks() {
                         <label className="text-sm font-medium text-slate-400">
                           Subject Mapping
                         </label>
-                        <span className="text-xs font-semibold bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-500/30">
+                        <span className="text-xs font-semibold bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full border border-blue-500/30">
                           {customSubjects.length} subjects
                         </span>
                       </div>
@@ -612,13 +612,13 @@ export default function ExtractMarks() {
                               <table className="w-full text-left min-w-150">
                                 <thead>
                                   <tr>
-                                    <th className="pb-3 text-xs font-mono font-bold text-indigo-400 w-1/4">
+                                    <th className="pb-3 text-xs font-mono font-bold text-blue-400 w-1/4">
                                       Code
                                     </th>
-                                    <th className="pb-3 text-xs font-mono font-bold text-indigo-400">
+                                    <th className="pb-3 text-xs font-mono font-bold text-blue-400">
                                       Subject Name
                                     </th>
-                                    <th className="pb-3 text-xs font-mono font-bold text-indigo-400 w-24">
+                                    <th className="pb-3 text-xs font-mono font-bold text-blue-400 w-24">
                                       Credits
                                     </th>
                                     <th className="pb-3 w-12"></th>
@@ -642,7 +642,7 @@ export default function ExtractMarks() {
                                               e.target.value.toUpperCase();
                                             setCustomSubjects(newSubjects);
                                           }}
-                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors uppercase"
+                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-blue-500/50 focus:border-blue-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors uppercase"
                                         />
                                       </td>
                                       <td className="py-1.5 pr-3">
@@ -657,7 +657,7 @@ export default function ExtractMarks() {
                                               e.target.value;
                                             setCustomSubjects(newSubjects);
                                           }}
-                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors"
+                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-blue-500/50 focus:border-blue-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors"
                                         />
                                       </td>
                                       <td className="py-1.5 pr-3">
@@ -674,7 +674,7 @@ export default function ExtractMarks() {
                                               parseInt(e.target.value) || 0;
                                             setCustomSubjects(newSubjects);
                                           }}
-                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-indigo-500/50 focus:border-indigo-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors"
+                                          className="w-full bg-slate-800/80 border border-slate-700/50 hover:border-blue-500/50 focus:border-blue-500 rounded-md text-sm px-3 py-2 text-white outline-none transition-colors"
                                         />
                                       </td>
                                       <td className="py-1.5">
@@ -706,9 +706,9 @@ export default function ExtractMarks() {
                                   { code: "", name: "", credits: 0 },
                                 ])
                               }
-                              className="w-full py-3 border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-lg text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-800/50 transition-all text-sm font-medium group mt-4!"
+                              className="w-full py-3 border-2 border-dashed border-slate-700 hover:border-blue-500/50 rounded-lg text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-800/50 transition-all text-sm font-medium group mt-4!"
                             >
-                              <Plus className="w-4 h-4 group-hover:text-indigo-400 transition-colors" />
+                              <Plus className="w-4 h-4 group-hover:text-blue-400 transition-colors" />
                               <span className="group-hover:text-white transition-colors">
                                 Add Subject
                               </span>
@@ -772,7 +772,7 @@ export default function ExtractMarks() {
                 {progress && (
                   <div className="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
                     <div className="flex justify-between text-sm font-medium mb-2">
-                      <span className="text-indigo-400">
+                      <span className="text-blue-400">
                         Batch {progress.current} of {progress.total}
                       </span>
                       <span className="text-slate-400">
@@ -781,7 +781,7 @@ export default function ExtractMarks() {
                     </div>
                     <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
                       <motion.div
-                        className="h-full bg-linear-to-r from-blue-500 to-indigo-500"
+                        className="h-full bg-linear-to-r from-blue-500 to-blue-500"
                         initial={{ width: 0 }}
                         animate={{
                           width: `${(progress.current / progress.total) * 100}%`,

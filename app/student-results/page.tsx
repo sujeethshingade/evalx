@@ -67,6 +67,15 @@ export default function StudentResultsPage() {
   );
   const [loadingGrid, setLoadingGrid] = useState(false);
 
+  useEffect(() => {
+    if (status) {
+      const timer = setTimeout(() => {
+        setStatus("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
+
   const loadBaseData = useCallback(async () => {
     const [studentsRes, runsRes] = await Promise.all([
       axios.get<{ students: StudentListItem[] }>("/api/results/students"),
@@ -230,7 +239,14 @@ export default function StudentResultsPage() {
 
     let startY = 42;
 
-    for (const sem of studentDetail.semesters) {
+    // Sort semesters in ascending order
+    const sortedSemesters = [...studentDetail.semesters].sort((a, b) => {
+      const numA = Number.parseInt(a.semester, 10);
+      const numB = Number.parseInt(b.semester, 10);
+      return numA - numB;
+    });
+
+    for (const sem of sortedSemesters) {
       doc.setFontSize(12);
       doc.text(`Semester ${sem.semester}`, 14, startY);
 
@@ -274,42 +290,52 @@ export default function StudentResultsPage() {
 
         <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
           <h2 className="text-lg font-semibold text-white mb-3">Saved Excel</h2>
-          <div className="space-y-2">
-            {runs.map((run) => (
-              <div
-                key={run._id}
-                className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    Semester {run.semester} | {run.totalStudents} students
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Uploaded: {formatDate(run.createdAt)}
-                  </p>
+          <div
+            className={`space-y-2 pr-1 ${runs.length > 3 ? "max-h-56 overflow-y-auto custom-scrollbar" : ""}`}
+          >
+            {[...runs]
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime(),
+              )
+              .map((run) => (
+                <div
+                  key={run._id}
+                  className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Semester {run.semester} | {run.totalStudents} students
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Uploaded: {formatDate(run.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => openRunInGrid(run._id)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-300 hover:bg-purple-500/20"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" /> View
+                    </button>
+                    <button
+                      onClick={() =>
+                        downloadRunExcel(run._id, run.excelFileName)
+                      }
+                      className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-500/20"
+                    >
+                      <Download className="h-4 w-4" /> Download
+                    </button>
+                    <button
+                      onClick={() => deleteRun(run._id)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300 hover:bg-red-500/20"
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={() => openRunInGrid(run._id)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-300 hover:bg-purple-500/20"
-                  >
-                    <FileSpreadsheet className="h-4 w-4" /> View
-                  </button>
-                  <button
-                    onClick={() => downloadRunExcel(run._id, run.excelFileName)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-500/20"
-                  >
-                    <Download className="h-4 w-4" /> Download
-                  </button>
-                  <button
-                    onClick={() => deleteRun(run._id)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300 hover:bg-red-500/20"
-                  >
-                    <Trash2 className="h-4 w-4" /> Delete
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
             {runs.length === 0 ? (
               <p className="text-sm text-slate-500">
                 No saved excel runs available.
@@ -323,16 +349,16 @@ export default function StudentResultsPage() {
             <Loader2 className="h-4 w-4 animate-spin" /> Loading records...
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <section className="md:col-span-1 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
+            <section className="md:col-span-1 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex flex-col gap-3 sticky top-6 h-[calc(100vh-3rem)]">
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by USN or name"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500 shrink-0"
               />
 
-              <div className="max-h-140 overflow-y-auto space-y-2 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {filteredStudents.map((student) => (
                   <button
                     key={student.usn}
@@ -388,70 +414,82 @@ export default function StudentResultsPage() {
                     </button>
                   </div>
 
-                  <div className="space-y-4 max-h-130 overflow-y-auto pr-1">
-                    {studentDetail.semesters.map((sem) => (
-                      <div
-                        key={`${sem.runId}-${sem.semester}`}
-                        className="rounded-xl border border-slate-800 bg-slate-950 p-3"
-                      >
-                        <h3 className="text-sm font-semibold text-white mb-3">
-                          Semester {sem.semester}
-                        </h3>
-                        <p className="text-xs text-slate-500 mb-3">
-                          Processed on {formatDate(sem.runCreatedAt)}
-                        </p>
+                  <div
+                    className={`space-y-4 pr-1 ${
+                      studentDetail.semesters.length > 3
+                        ? "max-h-130 overflow-y-auto"
+                        : ""
+                    }`}
+                  >
+                    {studentDetail.semesters
+                      .sort((a, b) => {
+                        const numA = Number.parseInt(a.semester, 10);
+                        const numB = Number.parseInt(b.semester, 10);
+                        return numA - numB;
+                      })
+                      .map((sem) => (
+                        <div
+                          key={`${sem.runId}-${sem.semester}`}
+                          className="rounded-xl border border-slate-800 bg-slate-950 p-3"
+                        >
+                          <h3 className="text-sm font-semibold text-white mb-3">
+                            Semester {sem.semester}
+                          </h3>
+                          <p className="text-xs text-slate-500 mb-3">
+                            Processed on {formatDate(sem.runCreatedAt)}
+                          </p>
 
-                        <div className="bg-slate-900 rounded-lg overflow-hidden">
-                          <AgGridReact
-                            columnDefs={[
-                              { field: "code", headerName: "Code", flex: 1 },
-                              {
-                                field: "name",
-                                headerName: "Subject",
-                                flex: 2,
-                              },
-                              {
-                                field: "internal",
-                                headerName: "Int",
-                                flex: 0.8,
-                              },
-                              {
-                                field: "external",
-                                headerName: "Ext",
-                                flex: 0.8,
-                              },
-                              { field: "total", headerName: "Tot", flex: 0.8 },
-                              {
-                                field: "result",
-                                headerName: "Res",
-                                flex: 0.8,
-                              },
-                            ]}
-                            rowData={sem.subjects.map((s) => ({
-                              code: s.code,
-                              name: s.name,
-                              internal: s.internal ?? "-",
-                              external: s.external ?? "-",
-                              total: s.total ?? "-",
-                              result: s.result ?? "-",
-                            }))}
-                            defaultColDef={{
-                              sortable: true,
-                              resizable: true,
-                              filter: false,
-                              cellStyle: {
-                                color: "#cbd5e1",
-                                fontSize: "12px",
-                              },
-                            }}
-                            containerStyle={{
-                              height: "200px",
-                              width: "100%",
-                            }}
-                          />
+                          <div className="mt-3 overflow-x-auto">
+                            <table className="min-w-full text-xs">
+                              <thead className="text-slate-400">
+                                <tr>
+                                  <th className="text-left py-2 pr-3">Code</th>
+                                  <th className="text-left py-2 pr-3">
+                                    Subject
+                                  </th>
+                                  <th className="text-left py-2 pr-3">
+                                    Internal
+                                  </th>
+                                  <th className="text-left py-2 pr-3">
+                                    External
+                                  </th>
+                                  <th className="text-left py-2 pr-3">Total</th>
+                                  <th className="text-left py-2 pr-3">
+                                    Result
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sem.subjects.map((subject, index) => (
+                                  <tr
+                                    key={`${subject.code}-${index}`}
+                                    className="border-t border-slate-800/70"
+                                  >
+                                    <td className="py-2 pr-3 text-slate-300">
+                                      {subject.code}
+                                    </td>
+                                    <td className="py-2 pr-3 text-slate-300">
+                                      {subject.name}
+                                    </td>
+                                    <td className="py-2 pr-3 text-slate-300">
+                                      {subject.internal ?? "-"}
+                                    </td>
+                                    <td className="py-2 pr-3 text-slate-300">
+                                      {subject.external ?? "-"}
+                                    </td>
+                                    <td className="py-2 pr-3 text-slate-300">
+                                      {subject.total ?? "-"}
+                                    </td>
+                                    <td className="py-2 pr-3 text-slate-300">
+                                      {subject.result ?? "-"}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </>
               )}
@@ -463,10 +501,10 @@ export default function StudentResultsPage() {
       {/* AG Grid Modal */}
       {gridData !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-6xl h-[80vh] bg-slate-950 rounded-2xl border border-slate-800 flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-slate-800">
-              <h2 className="text-xl font-semibold text-white">
-                Excel Data Viewer
+          <div className="w-full max-w-7xl h-[90vh] bg-slate-950 rounded-2xl border border-slate-800 flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-800">
+              <h2 className="text-md font-semibold text-white">
+                {gridData.length} Records
               </h2>
               <button
                 onClick={() => setGridData(null)}

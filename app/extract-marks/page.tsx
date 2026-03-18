@@ -200,7 +200,7 @@ export default function ExtractMarks() {
       const droppedFiles = Array.from(e.dataTransfer.files).filter(
         (f) => f.type === "application/pdf" || f.name.endsWith(".pdf"),
       );
-      setFiles((prev) => [...prev, ...droppedFiles]);
+      setFiles((prev) => [...droppedFiles, ...prev]);
     }
   };
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,7 +208,7 @@ export default function ExtractMarks() {
       const selectedFiles = Array.from(e.target.files).filter(
         (f) => f.type === "application/pdf" || f.name.endsWith(".pdf"),
       );
-      setFiles((prev) => [...prev, ...selectedFiles]);
+      setFiles((prev) => [...selectedFiles, ...prev]);
     }
   };
   const removeFile = (index: number) =>
@@ -296,15 +296,35 @@ export default function ExtractMarks() {
     }
   };
 
-  // AG Grid config
+  // AG Grid config - prioritize name, internal, external, total, result columns
   const colDefs = useMemo(() => {
     if (!results || results.length === 0) return [];
-    return Object.keys(results[0]).map((key) => ({
+
+    const allKeys = Object.keys(results[0]);
+    const priorityPattern = /Name|Internal|External|Total|Result/i;
+
+    // Separate name key and score keys
+    const nameKey = allKeys.find(
+      (k) =>
+        /name|student/i.test(k) && !/internal|external|total|result/i.test(k),
+    );
+    const scoreKeys = allKeys.filter(
+      (k) => priorityPattern.test(k) && k !== nameKey,
+    );
+
+    // Build column definitions
+    const columns: typeof allKeys = [];
+    if (nameKey) columns.push(nameKey);
+    columns.push(...scoreKeys);
+    columns.push(...allKeys.filter((k) => !columns.includes(k)));
+
+    return columns.map((key) => ({
       field: key,
-      flex: 1,
-      minWidth: 150,
+      headerName: key.replace(/_/g, " "),
+      flex: key === nameKey ? 1.5 : 1,
+      minWidth: key === nameKey ? 200 : 100,
       filter: false,
-      sortable: false,
+      sortable: true,
       resizable: true,
     }));
   }, [results]);
@@ -823,7 +843,7 @@ export default function ExtractMarks() {
                   </div>
 
                   {/* AG Grid Container */}
-                  <div className="w-full h-150 border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark">
+                  <div className="w-full border border-slate-700/50 rounded-xl overflow-hidden shadow-inner ag-theme-quartz-dark flex flex-col">
                     <AgGridReact
                       theme={themeQuartz}
                       rowData={results}
@@ -832,7 +852,10 @@ export default function ExtractMarks() {
                       pagination={true}
                       paginationPageSize={20}
                       paginationPageSizeSelector={[20, 50, 100]}
-                      className="w-full h-full text-sm"
+                      suppressMovableColumns={false}
+                      enableCellTextSelection={true}
+                      domLayout="autoHeight"
+                      className="w-full text-sm"
                     />
                   </div>
                 </div>

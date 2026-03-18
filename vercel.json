@@ -11,8 +11,11 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/api/extract/?",
       "dest": "/api/index.py"
+    },
+    {
+      "handle": "filesystem"
     }
   ]
 }

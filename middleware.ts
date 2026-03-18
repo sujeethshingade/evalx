@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
 
   // Paths that require authentication
-  const protectedPaths = ["/extract-marks", "/dashboard", "/student-results"];
+  const protectedPaths = ["/extract-marks", "/student-results"];
   const isProtectedPath = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path),
   );
@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   if (isAuthPage && token) {
     const payload = await verifyJwt(token);
     if (payload) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/student-results", request.url));
     }
   }
 

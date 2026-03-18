@@ -121,7 +121,7 @@ export default function Home() {
                   onHoverStart={() =>
                     setPingingCards((prev) => ({ ...prev, [idx]: true }))
                   }
-                  className={`bg-slate-950/50 border border-slate-800 p-8 rounded-4xl transition-colors group ${pingingCards[idx] ? "animate-ping" : "hover:bg-slate-800/50"}`}
+                  className={"bg-slate-950/50 border border-slate-800 p-8 rounded-4xl transition-colors group"}
                 >
                   <div className="w-14 h-14 bg-slate-900 border border-slate-700/50 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform duration-300">
                     {feature.icon}
@@ -146,7 +146,7 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
             onHoverStart={() => setStatsPinged(true)}
-            className={`max-w-6xl mx-auto rounded-4xl p-12 md:p-16 relative overflow-hidden border border-slate-800 shadow-2xl ${statsPinged ? "animate-ping" : "hover:bg-slate-800/50"}`}
+            className={"max-w-6xl mx-auto rounded-4xl p-12 md:p-16 relative overflow-hidden border border-slate-800 shadow-2xl"}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 text-center items-center">
               <motion.div

@@ -46,19 +46,16 @@ export default function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300 absolute left-1/2 -translate-x-1/2">
-          <Link 
-            href="/dashboard" 
-            className="hover:text-white transition-colors">
-            Dashboard
-          </Link>
           <Link
             href="/extract-marks"
-            className="hover:text-white transition-colors">
+            className="hover:text-white transition-colors"
+          >
             Extract Marks
           </Link>
           <Link
             href="/student-results"
-            className="hover:text-white transition-colors">
+            className="hover:text-white transition-colors"
+          >
             Student Results
           </Link>
         </nav>
@@ -122,6 +119,13 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Extract Marks
+            </Link>
+            <Link
+              href="/student-results"
+              className="hover:text-white transition-colors block py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Student Results
             </Link>
             {authenticated ? (
               <button

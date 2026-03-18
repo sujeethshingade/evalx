@@ -169,7 +169,9 @@ export default function ExtractMarks() {
     current: number;
     total: number;
   } | null>(null);
-  const [results, setResults] = useState<any[] | null>(null);
+  const [results, setResults] = useState<Record<string, unknown>[] | null>(
+    null,
+  );
   const [customSubjects, setCustomSubjects] = useState<SubjectInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isEmailing, setIsEmailing] = useState(false);
@@ -178,6 +180,7 @@ export default function ExtractMarks() {
   const [copyStatus, setCopyStatus] = useState("");
   const [emailStatus, setEmailStatus] = useState("");
   const [extractError, setExtractError] = useState("");
+  const [saveStatus, setSaveStatus] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,7 +231,7 @@ export default function ExtractMarks() {
     const totalChunks = Math.ceil(files.length / CHUNK_SIZE);
     setProgress({ current: 0, total: totalChunks });
 
-    let allExtractedData: any[] = [];
+    let allExtractedData: Record<string, unknown>[] = [];
 
     try {
       for (let i = 0; i < totalChunks; i++) {
@@ -258,6 +261,19 @@ export default function ExtractMarks() {
           allExtractedData = [...allExtractedData, ...response.data.data];
         }
       }
+
+      setSaveStatus("Saving extracted data...");
+      try {
+        await axios.post("/api/results/runs", {
+          semester,
+          results: allExtractedData,
+        });
+        setSaveStatus("Saved successfully. Available in student results.");
+      } catch (saveError) {
+        console.error("Failed to save extracted data:", saveError);
+        setSaveStatus("Extraction completed, but auto-save failed.");
+      }
+
       setResults(allExtractedData);
       setStep(4); // Move to Results step
     } catch (error) {
@@ -755,6 +771,11 @@ export default function ExtractMarks() {
                         </span>{" "}
                         students across {files.length} files.
                       </p>
+                      {saveStatus ? (
+                        <p className="text-sm text-blue-300 mt-1">
+                          {saveStatus}
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -842,8 +863,8 @@ export default function ExtractMarks() {
                   Send Results via Email
                 </h3>
                 <p className="text-sm text-slate-400 mb-6">
-                  Enter the recipient's email address. The Excel file will be
-                  attached.
+                  Enter the recipient&apos;s email address. The Excel file will
+                  be attached.
                 </p>
 
                 <form onSubmit={handleEmailResults} className="space-y-4">

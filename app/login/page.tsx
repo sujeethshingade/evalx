@@ -20,7 +20,7 @@ import Footer from "../components/Footer";
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("from") || "/dashboard";
+  const redirectPath = searchParams.get("from") || "/student-results";
 
   const [step, setStep] = useState<"login" | "otp">("login");
   const [email, setEmail] = useState("");

@@ -15,10 +15,10 @@ except ImportError:
 
 # Try importing pypdf
 try:
-    import pypdf
-    has_pypdf = True
+    import pdfplumber
+    has_pdfplumber = True
 except ImportError:
-    has_pypdf = False
+    has_pdfplumber = False
 
 app = FastAPI()
 
@@ -31,16 +31,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-usn_pattern = re.compile(r"University Seat Number\s*:\s*(\w+)", re.IGNORECASE)
-name_pattern = re.compile(r"Student Name\s*:\s*(.*)", re.IGNORECASE)
+usn_pattern = re.compile(r"University Seat Number\s*:?\s*([1-9][A-Z0-9]+)", re.IGNORECASE)
+name_pattern = re.compile(r"Student Name\s*:?\s*([A-Z\s\.]+?)\n(?:Subject|Semester|Code)", re.IGNORECASE)
 
-# Enhanced subject patterns with more flexible matching
+# Enhanced subject patterns with more flexible matching and bounded quantifiers to prevent ReDoS
 subject_patterns = [
-    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+([A-Z][A-Z\s&/\-]+?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])", re.IGNORECASE),
-    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+((?:[A-Z][A-Z\s&/\-]+)+?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])", re.IGNORECASE),
-    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+(.+?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])\s+\d{4}", re.IGNORECASE),
-    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+(.+?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])\s+\d{4}-\d{2}-\d{2}", re.IGNORECASE),
-    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+(.*?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])", re.IGNORECASE)
+    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+([A-Z\s&/\-]{2,100}?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])", re.IGNORECASE),
+    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+([^\d\n]{2,100}?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])\s+\d{4}", re.IGNORECASE),
+    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+([^\d\n]{2,100}?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])\s+\d{4}-\d{2}-\d{2}", re.IGNORECASE),
+    re.compile(r"([A-Z]{2,5}\d{3,6}[A-Z]?)\s+([^\d\n]{2,100}?)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+(\d{1,3}|AB)\s+([PFAWXNE])", re.IGNORECASE)
 ]
 
 def clean_subject_name(subject_name, subject_code, known_subjects):
@@ -116,10 +115,10 @@ def extract_subjects_from_text(text: str, pdf_filename: str, known_subjects: dic
             for line_idx, line in enumerate(lines):
                 if code in line:
                     enhanced_patterns = [
-                        rf"{re.escape(code)}\s+.*?\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])",
+                        rf"{re.escape(code)}\s+[^\d\n]{{0,100}}?\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])",
                         rf"{re.escape(code)}\s+[A-Z/&\s]+\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])",
-                        rf"{re.escape(code)}\s+[A-Z\s&]+(?:ALGORITHMS?|JAVA|DATABASE|LAB|UI/UX|ALGEBRA).*?\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])",
-                        rf"{re.escape(code)}.*?(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])",
+                        rf"{re.escape(code)}\s+[A-Z\s&]+(?:ALGORITHMS?|JAVA|DATABASE|LAB|UI/UX|ALGEBRA)[^\d\n]{{0,100}}?\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])",
+                        rf"{re.escape(code)}[^\d\n]{{0,100}}?(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])",
                         rf"{re.escape(code)}\s*(?:[A-Z\s&/]+)?\s*(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])"
                     ]
                     search_text = line
@@ -151,7 +150,7 @@ def extract_subjects_from_text(text: str, pdf_filename: str, known_subjects: dic
         if code not in [s['code'] for s in subjects_found]:
             for match in re.finditer(re.escape(code), text, re.IGNORECASE):
                 pos = match.start()
-                window = text[max(0, pos-100):min(len(text), pos+200)]
+                window = text[pos:min(len(text), pos+300)]
                 marks_pattern = rf"(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+(\d{{1,3}}|AB)\s+([PFAWXNE])"
                 marks_match = re.search(marks_pattern, window)
                 if marks_match:
@@ -198,19 +197,19 @@ async def extract_marks(
                     text = "\n".join(page.get_text() for page in doc)
                     doc.close()
                 except Exception as fitz_err:
-                    print(f"PyMuPDF error reading {file.filename}, trying pypdf fallback: {fitz_err}")
-                    if has_pypdf:
+                    print(f"PyMuPDF error reading {file.filename}, trying pdfplumber fallback: {fitz_err}")
+                    if has_pdfplumber:
                         pdf_file = io.BytesIO(content)
-                        reader = pypdf.PdfReader(pdf_file)
-                        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+                        with pdfplumber.open(pdf_file) as pdf:
+                            text = "\n".join(page.extract_text(layout=True) or "" for page in pdf.pages)
                     else:
                         raise fitz_err
-            elif has_pypdf:
+            elif has_pdfplumber:
                 pdf_file = io.BytesIO(content)
-                reader = pypdf.PdfReader(pdf_file)
-                text = "\n".join(page.extract_text() or "" for page in reader.pages)
+                with pdfplumber.open(pdf_file) as pdf:
+                    text = "\n".join(page.extract_text(layout=True) or "" for page in pdf.pages)
             else:
-                raise RuntimeError("No PDF library (PyMuPDF or pypdf) is available.")
+                raise RuntimeError("No PDF library (PyMuPDF or pdfplumber) is available.")
         except Exception as e:
             print(f"Error reading PDF {file.filename}: {e}")
             continue

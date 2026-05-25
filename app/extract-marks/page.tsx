@@ -157,9 +157,9 @@ const KNOWN_SUBJECTS_MAP: Record<string, SubjectInfo[]> = {
     { code: "BCS714A", name: "DEEP LEARNING", credits: 3 },
   ],
   "8th": [
-    { code: "BIS801", name: "PEC", credits: 3 },
-    { code: "BIS802", name: "OEC", credits: 3 },
-    { code: "BIS803", name: "Internship", credits: 10 },
+    { code: "BIS801", name: "PROFESSIONAL ELECTIVE COURSE", credits: 3 },
+    { code: "BIS802", name: "OPEN ELECTIVE COURSE", credits: 3 },
+    { code: "BIS803", name: "INDUSTRY INTERNSHIP", credits: 10 },
   ],
 };
 
@@ -231,7 +231,7 @@ export default function ExtractMarks() {
     setStep(3); // Move to Processing step
     setResults(null);
 
-    const CHUNK_SIZE = 5;
+    const CHUNK_SIZE = 10;
     const totalChunks = Math.ceil(files.length / CHUNK_SIZE);
     setProgress({ current: 0, total: totalChunks });
 
@@ -338,6 +338,15 @@ export default function ExtractMarks() {
         pinned: "left",
       });
     }
+    const fileKey = allKeys.find((k) => /file|pdf/i.test(k));
+    if (fileKey) {
+      cols.push({
+        field: fileKey,
+        headerName: "FILE",
+        minWidth: 150,
+        pinned: "left",
+      });
+    }
 
     const subjectPrefixes = new Set<string>();
     const suffixes = [
@@ -396,6 +405,7 @@ export default function ExtractMarks() {
     const usedKeys = new Set<string>();
     if (usnKey) usedKeys.add(usnKey);
     if (nameKey) usedKeys.add(nameKey);
+    if (fileKey) usedKeys.add(fileKey);
     for (const prefix of sortedPrefixes) {
       for (const suffix of suffixes) {
         usedKeys.add(`${prefix}${suffix}`);

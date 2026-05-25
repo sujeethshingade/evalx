@@ -17,5 +17,13 @@
     {
       "handle": "filesystem"
     }
-  ]
+  ],
+  "functions": {
+    "api/**/*.py": {
+      "maxDuration": 300
+    },
+    "app/api/**/*": {
+      "maxDuration": 300
+    }
+  }
 }

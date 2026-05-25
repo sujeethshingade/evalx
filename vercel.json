@@ -17,5 +17,10 @@
     {
       "handle": "filesystem"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 300
+    }
+  }
 }

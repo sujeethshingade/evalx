@@ -231,7 +231,7 @@ export default function ExtractMarks() {
     setStep(3); // Move to Processing step
     setResults(null);
 
-    const CHUNK_SIZE = 15;
+    const CHUNK_SIZE = 5;
     const totalChunks = Math.ceil(files.length / CHUNK_SIZE);
     setProgress({ current: 0, total: totalChunks });
 

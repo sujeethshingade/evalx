@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       await user.save();
 
       const { error } = await resend.emails.send({
-        from: getEmailFromAddress(),
+        from: getEmailFromAddress() || "Sujeeth Shingade [sujeethshingade.dev]",
         to: normalizedEmail,
         subject: "Verify your EvalX account",
         html: otpTemplate(otp),

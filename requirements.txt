@@ -1,6 +1,7 @@
 fastapi
 python-multipart
 PyMuPDF
+pypdf
 uvicorn
 pandas
 openpyxl

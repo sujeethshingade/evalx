@@ -10,7 +10,7 @@ export const getResendClient = () => {
 };
 
 export const getEmailFromAddress = () => {
-  return process.env.RESEND_FROM || "EvalX <onboarding@resend.dev>";
+  return process.env.RESEND_FROM;
 };
 
 export const otpTemplate = (otp: string) => `

@@ -3,8 +3,22 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import json
-import fitz
 import re
+import io
+
+# Try importing fitz (PyMuPDF)
+try:
+    import fitz
+    has_fitz = True
+except ImportError:
+    has_fitz = False
+
+# Try importing pypdf
+try:
+    import pypdf
+    has_pypdf = True
+except ImportError:
+    has_pypdf = False
 
 app = FastAPI()
 
@@ -176,10 +190,27 @@ async def extract_marks(
             continue
             
         content = await file.read()
+        text = ""
         try:
-            doc = fitz.open(stream=content, filetype="pdf")
-            text = "\n".join(page.get_text() for page in doc)
-            doc.close()
+            if has_fitz:
+                try:
+                    doc = fitz.open(stream=content, filetype="pdf")
+                    text = "\n".join(page.get_text() for page in doc)
+                    doc.close()
+                except Exception as fitz_err:
+                    print(f"PyMuPDF error reading {file.filename}, trying pypdf fallback: {fitz_err}")
+                    if has_pypdf:
+                        pdf_file = io.BytesIO(content)
+                        reader = pypdf.PdfReader(pdf_file)
+                        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+                    else:
+                        raise fitz_err
+            elif has_pypdf:
+                pdf_file = io.BytesIO(content)
+                reader = pypdf.PdfReader(pdf_file)
+                text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            else:
+                raise RuntimeError("No PDF library (PyMuPDF or pypdf) is available.")
         except Exception as e:
             print(f"Error reading PDF {file.filename}: {e}")
             continue
